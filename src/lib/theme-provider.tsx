@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useCallback, useSyncExternalStore, createContext, useContext, useState, ReactNode } from 'react';
+import { useEffect, useCallback, useSyncExternalStore, createContext, useContext, ReactNode } from 'react';
 
 type Theme = 'light' | 'dark' | 'system';
 
@@ -11,8 +11,8 @@ interface ThemeContextType {
 }
 
 const ThemeContext = createContext<ThemeContextType>({
-  theme: 'system',
-  resolvedTheme: 'light',
+  theme: 'dark',
+  resolvedTheme: 'dark',
   setTheme: () => {},
 });
 
@@ -21,18 +21,18 @@ export function useTheme() {
 }
 
 function getStoredTheme(): Theme {
-  if (typeof window === 'undefined') return 'system';
+  if (typeof window === 'undefined') return 'dark';
   try {
     const saved = localStorage.getItem('heyjournal-theme');
     if (saved === 'light' || saved === 'dark' || saved === 'system') return saved;
   } catch {
     // localStorage unavailable
   }
-  return 'system';
+  return 'dark';
 }
 
 function getSystemTheme(): 'light' | 'dark' {
-  if (typeof window === 'undefined') return 'light';
+  if (typeof window === 'undefined') return 'dark';
   return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
 }
 
@@ -50,22 +50,16 @@ function applyTheme(resolved: 'light' | 'dark') {
   }
 }
 
-// Listen for storage events (cross-tab sync) and system theme changes
 let listeners: Array<() => void> = [];
 
 function subscribeToTheme(callback: () => void): () => void {
   listeners.push(callback);
-
-  // System theme changes
   const mql = window.matchMedia('(prefers-color-scheme: dark)');
   mql.addEventListener('change', callback);
-
-  // Storage events (cross-tab sync)
   const handleStorage = (e: StorageEvent) => {
     if (e.key === 'heyjournal-theme') callback();
   };
   window.addEventListener('storage', handleStorage);
-
   return () => {
     listeners = listeners.filter((l) => l !== callback);
     mql.removeEventListener('change', callback);
@@ -78,7 +72,7 @@ function getThemeSnapshot(): Theme {
 }
 
 function getServerThemeSnapshot(): Theme {
-  return 'system';
+  return 'dark';
 }
 
 export function ThemeProvider({ children }: { children: ReactNode }) {
@@ -86,19 +80,17 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
   const systemTheme = useSyncExternalStore(
     subscribeToSystemThemeOnly,
     getSystemTheme,
-    () => 'light' as const
+    () => 'dark' as const
   );
 
   const resolvedTheme = resolveTheme(theme);
 
-  // Apply theme to DOM
   useEffect(() => {
     applyTheme(resolvedTheme);
   }, [resolvedTheme]);
 
   const setTheme = useCallback((t: Theme) => {
     localStorage.setItem('heyjournal-theme', t);
-    // Trigger re-render via listeners
     listeners.forEach((l) => l());
   }, []);
 
@@ -113,8 +105,4 @@ function subscribeToSystemThemeOnly(callback: () => void): () => void {
   const mql = window.matchMedia('(prefers-color-scheme: dark)');
   mql.addEventListener('change', callback);
   return () => mql.removeEventListener('change', callback);
-}
-
-function getSystemThemeSnapshot(): 'light' | 'dark' {
-  return getSystemTheme();
 }

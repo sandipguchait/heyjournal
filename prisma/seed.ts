@@ -1,23 +1,36 @@
 import { PrismaClient } from '@prisma/client';
-import { addDays, subDays, format, startOfWeek, startOfMonth, subMonths } from 'date-fns';
+import { subDays, startOfWeek, startOfMonth } from 'date-fns';
 
 const prisma = new PrismaClient();
 
 const DEMO_USER_ID = 'demo_user_001';
 
 async function main() {
-  console.log('🌱 Seeding database...');
+  console.log('Seeding database with Indian market data...');
+
+  // Clean existing data
+  await prisma.tradeTagMap.deleteMany({ where: { trade: { userId: DEMO_USER_ID } } });
+  await prisma.tradeScreenshot.deleteMany({ where: { trade: { userId: DEMO_USER_ID } } });
+  await prisma.trade.deleteMany({ where: { userId: DEMO_USER_ID } });
+  await prisma.periodReview.deleteMany({ where: { userId: DEMO_USER_ID } });
+  await prisma.dailyReview.deleteMany({ where: { userId: DEMO_USER_ID } });
+  await prisma.tradeTag.deleteMany({ where: { userId: DEMO_USER_ID } });
 
   // Create demo user
-  const user = await prisma.user.upsert({
+  await prisma.user.upsert({
     where: { id: DEMO_USER_ID },
-    update: {},
+    update: {
+      name: 'Indian Trader',
+      email: 'demo@heyjournal.com',
+      timezone: 'Asia/Kolkata',
+      currency: 'INR',
+    },
     create: {
       id: DEMO_USER_ID,
-      name: 'Demo Trader',
+      name: 'Indian Trader',
       email: 'demo@heyjournal.com',
-      timezone: 'America/New_York',
-      currency: 'USD',
+      timezone: 'Asia/Kolkata',
+      currency: 'INR',
     },
   });
 
@@ -27,16 +40,16 @@ async function main() {
     update: {},
     create: {
       userId: DEMO_USER_ID,
-      defaultMarket: 'stocks',
-      defaultTimezone: 'America/New_York',
-      defaultCurrency: 'USD',
-      theme: 'system',
+      defaultMarket: 'equity',
+      defaultTimezone: 'Asia/Kolkata',
+      defaultCurrency: 'INR',
+      theme: 'dark',
       notificationEnabled: true,
     },
   });
 
-  // Create tags
-  const tagNames = ['Gap Up', 'Earnings', 'News', 'Technical', 'Momentum', 'Reversal', 'Oversold', 'Overbought'];
+  // Create tags (Indian market specific)
+  const tagNames = ['Gap Up', 'Breakout', 'Earnings', 'News Based', 'Technical', 'Momentum', 'Reversal', 'High Volume'];
   const tags: Record<string, string> = {};
   for (const name of tagNames) {
     const tag = await prisma.tradeTag.upsert({
@@ -47,203 +60,246 @@ async function main() {
     tags[name] = tag.id;
   }
 
-  // Generate trades for the past 90 days
-  const symbols = ['AAPL', 'TSLA', 'NVDA', 'MSFT', 'GOOGL', 'AMZN', 'META', 'SPY', 'QQQ', 'AMD', 'NFLX', 'DIS'];
-  const strategies = ['Breakout', 'Pullback', 'Trend Following', 'Mean Reversion', 'Scalping', 'Swing Trade', 'Momentum'];
-  const timeframes = ['5m', '15m', '1h', '4h', '1D'];
-  const emotions = ['calm', 'confident', 'anxious', 'excited', 'neutral', 'frustrated'];
-  const brokers = ['Interactive Brokers', 'TD Ameritrade', 'E*TRADE', 'Robinhood'];
-  const accounts = ['Main', 'Paper Trading', 'Swing Account'];
-
   const today = new Date();
-  const tradesToCreate: any[] = [];
+  const istOffset = 5.5 * 60 * 60 * 1000;
 
-  for (let i = 0; i < 90; i++) {
-    const date = subDays(today, i);
-    const dayOfWeek = date.getDay();
-    if (dayOfWeek === 0 || dayOfWeek === 6) continue; // Skip weekends
+  // 10 carefully crafted Indian stock market trades
+  const tradesData = [
+    {
+      symbol: 'RELIANCE', direction: 'long', entryPrice: 2945.50, exitPrice: 2998.75, quantity: 50,
+      stopLoss: 2920.00, targetPrice: 3010.00, fees: 53.20, strategy: 'Breakout', timeframe: '15m',
+      accountName: 'Main Account', broker: 'Zerodha', setupQuality: 4, confidenceRating: 4,
+      emotionalStateBefore: 'confident', emotionalStateAfter: 'confident',
+      notes: 'Reliance broke above 2940 resistance with strong volume. Entry was clean on the 15-min chart after a pullback to VWAP. Oil prices were supportive.',
+      tagNames: ['Breakout', 'High Volume'], daysAgo: 0,
+    },
+    {
+      symbol: 'TCS', direction: 'long', entryPrice: 3892.00, exitPrice: 3845.30, quantity: 25,
+      stopLoss: 3860.00, targetPrice: 3950.00, fees: 48.50, strategy: 'Pullback', timeframe: '1h',
+      accountName: 'Main Account', broker: 'Zerodha', setupQuality: 3, confidenceRating: 3,
+      emotionalStateBefore: 'calm', emotionalStateAfter: 'frustrated',
+      notes: 'TCS pulled back to 20 EMA on hourly chart. IT sector was showing weakness due to US Fed concerns. Exit was at stop loss as price continued lower.',
+      mistakes: 'Should have waited for confirmation candle before entry. IT sector was showing overall weakness.',
+      tagNames: ['Technical'], daysAgo: 1,
+    },
+    {
+      symbol: 'HDFCBANK', direction: 'long', entryPrice: 1678.25, exitPrice: 1725.80, quantity: 150,
+      stopLoss: 1660.00, targetPrice: 1745.00, fees: 73.10, strategy: 'VWAP Strategy', timeframe: '5m',
+      accountName: 'Main Account', broker: 'Zerodha', setupQuality: 5, confidenceRating: 5,
+      emotionalStateBefore: 'confident', emotionalStateAfter: 'excited',
+      notes: 'HDFC Bank gave a perfect VWAP bounce on 5-min chart. Banking sector was strong after RBI policy announcement. Large position size due to high confidence.',
+      lessonsLearned: 'VWAP bounces in trending sectors give the best risk-reward. Stick to these setups.',
+      tagNames: ['Momentum', 'High Volume'], daysAgo: 2,
+    },
+    {
+      symbol: 'NIFTY 50', direction: 'short', entryPrice: 22450.00, exitPrice: 22310.50, quantity: 25,
+      stopLoss: 22500.00, targetPrice: 22200.00, fees: 62.00, strategy: 'Opening Range Breakout', timeframe: '15m',
+      accountName: 'Options Account', broker: 'Zerodha', setupQuality: 4, confidenceRating: 4,
+      emotionalStateBefore: 'calm', emotionalStateAfter: 'confident',
+      notes: 'Nifty showed weakness at opening after negative global cues. Shorted the opening range breakdown below 22450 with proper SL above previous day high.',
+      tagNames: ['Gap Up', 'Technical'], daysAgo: 3,
+    },
+    {
+      symbol: 'TATAMOTORS', direction: 'long', entryPrice: 658.40, exitPrice: 682.15, quantity: 200,
+      stopLoss: 648.00, targetPrice: 695.00, fees: 41.30, strategy: 'Momentum', timeframe: '30m',
+      accountName: 'Main Account', broker: 'Groww', setupQuality: 4, confidenceRating: 3,
+      emotionalStateBefore: 'anxious', emotionalStateAfter: 'excited',
+      notes: 'Tata Motors was showing strong momentum after JLR sales numbers. Entered on pullback to 20 EMA. Volume was above average.',
+      tagNames: ['Momentum', 'News Based'], daysAgo: 4,
+    },
+    {
+      symbol: 'INFY', direction: 'short', entryPrice: 1578.90, exitPrice: 1595.40, quantity: 100,
+      stopLoss: 1560.00, targetPrice: 1545.00, fees: 39.90, strategy: 'Mean Reversion', timeframe: '1h',
+      accountName: 'Main Account', broker: 'Zerodha', setupQuality: 2, confidenceRating: 2,
+      emotionalStateBefore: 'greedy', emotionalStateAfter: 'frustrated',
+      notes: 'Tried to short Infosys at resistance but it broke through with strong buying. Should not have counter-trend traded.',
+      mistakes: 'Entered against the trend. Did not wait for proper reversal confirmation. Greedy entry hoping for quick profit.',
+      lessonsLearned: 'Do not counter-trend trade unless there is a clear reversal pattern with volume confirmation.',
+      tagNames: ['Reversal'], daysAgo: 5,
+    },
+    {
+      symbol: 'SBIN', direction: 'long', entryPrice: 782.50, exitPrice: 812.75, quantity: 300,
+      stopLoss: 770.00, targetPrice: 825.00, fees: 47.10, strategy: 'Breakout', timeframe: '15m',
+      accountName: 'Main Account', broker: 'Angel One', setupQuality: 4, confidenceRating: 4,
+      emotionalStateBefore: 'calm', emotionalStateAfter: 'confident',
+      notes: 'SBI broke out of a 3-day consolidation with massive volume. PSU banking sector was in focus. Entered on breakout and held till target.',
+      tagNames: ['Breakout', 'High Volume'], daysAgo: 7,
+    },
+    {
+      symbol: 'BANKNIFTY', direction: 'long', entryPrice: 48950.00, exitPrice: 48720.00, quantity: 15,
+      stopLoss: 48800.00, targetPrice: 49200.00, fees: 33.75, strategy: 'Trend Following', timeframe: '5m',
+      accountName: 'Options Account', broker: 'Zerodha', setupQuality: 3, confidenceRating: 3,
+      emotionalStateBefore: 'neutral', emotionalStateAfter: 'frustrated',
+      notes: 'Bank Nifty showed initial strength but reversed sharply after RBI deputy governor speech. Small loss due to tight stop loss.',
+      mistakes: 'Should have waited for the event to pass before entering. RBI events cause high volatility in banking sector.',
+      tagNames: ['Technical', 'News Based'], daysAgo: 8,
+    },
+    {
+      symbol: 'ICICIBANK', direction: 'long', entryPrice: 1085.30, exitPrice: 1124.60, quantity: 200,
+      stopLoss: 1072.00, targetPrice: 1140.00, fees: 54.20, strategy: 'Support/Resistance', timeframe: '30m',
+      accountName: 'Main Account', broker: 'Zerodha', setupQuality: 5, confidenceRating: 5,
+      emotionalStateBefore: 'confident', emotionalStateAfter: 'excited',
+      notes: 'ICICI Bank took support exactly at 1080 level (previous swing low + 50 DMA). Beautiful bounce with volume. Banking sector was strong post-results.',
+      lessonsLearned: 'Support-resistance bounces at confluence zones (50 DMA + swing low) give highest probability trades.',
+      tagNames: ['Technical', 'Momentum'], daysAgo: 9,
+    },
+    {
+      symbol: 'ITC', direction: 'short', entryPrice: 462.75, exitPrice: 455.30, quantity: 500,
+      stopLoss: 470.00, targetPrice: 445.00, fees: 58.50, strategy: 'Candlestick Pattern', timeframe: '1h',
+      accountName: 'Main Account', broker: 'Upstox', setupQuality: 4, confidenceRating: 4,
+      emotionalStateBefore: 'calm', emotionalStateAfter: 'confident',
+      notes: 'ITC formed a bearish engulfing pattern on the hourly chart at resistance. FMCG sector was weak. Clean entry with target achieved in 2 hours.',
+      tagNames: ['Technical', 'Reversal'], daysAgo: 10,
+    },
+  ];
 
-    // 1-5 trades per day
-    const tradesPerDay = Math.floor(Math.random() * 5) + 1;
-    for (let j = 0; j < tradesPerDay; j++) {
-      const symbol = symbols[Math.floor(Math.random() * symbols.length)];
-      const direction = Math.random() > 0.45 ? 'long' : 'short';
-      const entryPrice = Math.round((Math.random() * 400 + 50) * 100) / 100;
-      const priceChange = (Math.random() - 0.4) * entryPrice * 0.04;
-      const exitPrice = Math.round((entryPrice + priceChange) * 100) / 100;
-      const quantity = Math.floor(Math.random() * 100) + 1;
-      const fees = Math.round(quantity * 0.01 * 100) / 100;
-      const pnl = direction === 'long'
-        ? Math.round(((exitPrice - entryPrice) * quantity - fees) * 100) / 100
-        : Math.round(((entryPrice - exitPrice) * quantity - fees) * 100) / 100;
-      const pnlPercent = Math.round(((exitPrice - entryPrice) / entryPrice) * 100 * 100) / 100 * (direction === 'long' ? 1 : -1);
-      const stopLoss = direction === 'long'
-        ? Math.round((entryPrice - entryPrice * 0.02) * 100) / 100
-        : Math.round((entryPrice + entryPrice * 0.02) * 100) / 100;
-      const risk = Math.abs(entryPrice - stopLoss) * quantity;
-      const rMultiple = risk > 0 ? Math.round((pnl / risk) * 100) / 100 : 0;
-      const strategy = strategies[Math.floor(Math.random() * strategies.length)];
-      const timeframe = timeframes[Math.floor(Math.random() * timeframes.length)];
-      const entryHour = 9 + Math.floor(Math.random() * 7);
-      const entryMin = Math.floor(Math.random() * 60);
-      const exitHour = entryHour + Math.floor(Math.random() * 3);
-      const exitMin = Math.floor(Math.random() * 60);
+  // Insert trades
+  const createdTrades = [];
+  for (const td of tradesData) {
+    const tradeDate = subDays(today, td.daysAgo);
+    tradeDate.setHours(tradeDate.getHours() + 5, tradeDate.getMinutes() + 30); // IST
 
-      const tradeDate = new Date(date.getFullYear(), date.getMonth(), date.getDate());
-      const entryTime = new Date(tradeDate);
-      entryTime.setHours(entryHour, entryMin);
-      const exitTime = new Date(tradeDate);
-      exitTime.setHours(Math.min(exitHour, 16), exitMin);
+    const entryHour = 9 + Math.floor(Math.random() * 5);
+    const entryMin = Math.floor(Math.random() * 60);
+    const exitHour = entryHour + 1 + Math.floor(Math.random() * 4);
+    const exitMin = Math.floor(Math.random() * 60);
 
-      tradesToCreate.push({
+    const entryTime = new Date(tradeDate);
+    entryTime.setHours(entryHour, entryMin, 0, 0);
+    const exitTime = new Date(tradeDate);
+    exitTime.setHours(Math.min(exitHour, 15), exitMin, 0, 0);
+
+    const pnl = td.direction === 'long'
+      ? Math.round(((td.exitPrice - td.entryPrice) * td.quantity - td.fees) * 100) / 100
+      : Math.round(((td.entryPrice - td.exitPrice) * td.quantity - td.fees) * 100) / 100;
+
+    const pnlPercent = Math.round(((td.exitPrice - td.entryPrice) / td.entryPrice) * 100 * 100) / 100 * (td.direction === 'long' ? 1 : -1);
+
+    const risk = Math.abs(td.entryPrice - td.stopLoss) * td.quantity;
+    const rMultiple = risk > 0 ? Math.round((pnl / risk) * 100) / 100 : 0;
+
+    const trade = await prisma.trade.create({
+      data: {
         userId: DEMO_USER_ID,
-        symbol,
-        marketType: 'stocks',
-        direction,
+        symbol: td.symbol,
+        marketType: ['NIFTY 50', 'BANKNIFTY', 'FINNIFTY'].includes(td.symbol) ? 'futures' : 'equity',
+        direction: td.direction,
         tradeDate,
         entryTime,
         exitTime,
-        entryPrice,
-        exitPrice,
-        quantity,
-        stopLoss,
-        targetPrice: direction === 'long'
-          ? Math.round((entryPrice + entryPrice * 0.03) * 100) / 100
-          : Math.round((entryPrice - entryPrice * 0.03) * 100) / 100,
-        fees,
+        entryPrice: td.entryPrice,
+        exitPrice: td.exitPrice,
+        quantity: td.quantity,
+        stopLoss: td.stopLoss,
+        targetPrice: td.targetPrice,
+        fees: td.fees,
         pnl,
         pnlPercent,
         riskAmount: Math.round(risk * 100) / 100,
         rMultiple,
-        strategy,
-        timeframe,
-        accountName: accounts[Math.floor(Math.random() * accounts.length)],
-        broker: brokers[Math.floor(Math.random() * brokers.length)],
-        setupQuality: Math.floor(Math.random() * 5) + 1,
-        confidenceRating: Math.floor(Math.random() * 5) + 1,
-        emotionalStateBefore: emotions[Math.floor(Math.random() * emotions.length)],
-        emotionalStateAfter: emotions[Math.floor(Math.random() * emotions.length)],
-        notes: i < 5 ? 'Good setup on the 15min chart with volume confirmation. Entry was clean with minimal slippage.' : null,
-        mistakes: Math.random() > 0.7 ? 'Moved stop loss too early' : null,
-        lessonsLearned: Math.random() > 0.7 ? 'Trust the setup and let winners run' : null,
+        strategy: td.strategy,
+        timeframe: td.timeframe,
+        accountName: td.accountName,
+        broker: td.broker,
+        setupQuality: td.setupQuality,
+        confidenceRating: td.confidenceRating,
+        emotionalStateBefore: td.emotionalStateBefore,
+        emotionalStateAfter: td.emotionalStateAfter,
+        notes: td.notes,
+        mistakes: td.mistakes || null,
+        lessonsLearned: td.lessonsLearned || null,
         status: 'closed',
-      });
-    }
+      },
+    });
+    createdTrades.push({ trade, tagNames: td.tagNames });
   }
 
-  // Insert trades in batches
-  console.log(`📊 Creating ${tradesToCreate.length} trades...`);
-  for (let i = 0; i < tradesToCreate.length; i += 50) {
-    const batch = tradesToCreate.slice(i, i + 50);
-    await prisma.trade.createMany({ data: batch });
-  }
-
-  // Get all trades for tagging
-  const allTrades = await prisma.trade.findMany({
-    where: { userId: DEMO_USER_ID },
-    select: { id: true },
-  });
-
-  // Assign random tags to trades (deduplicated)
-  const tagMappings = Object.entries(tags);
-  const tagMapSet = new Set<string>();
-  const tagMapData: { tradeId: string; tagId: string }[] = [];
-  for (const trade of allTrades) {
-    const numTags = Math.floor(Math.random() * 3);
-    const usedTags = new Set<string>();
-    for (let t = 0; t < numTags; t++) {
-      const [_, tagId] = tagMappings[Math.floor(Math.random() * tagMappings.length)];
-      const key = `${trade.id}-${tagId}`;
-      if (!tagMapSet.has(key) && !usedTags.has(tagId)) {
-        tagMapSet.add(key);
-        usedTags.add(tagId);
-        tagMapData.push({ tradeId: trade.id, tagId });
+  // Create tag mappings
+  for (const { trade, tagNames: tNames } of createdTrades) {
+    for (const name of tNames) {
+      if (tags[name]) {
+        await prisma.tradeTagMap.create({
+          data: { tradeId: trade.id, tagId: tags[name] },
+        });
       }
     }
   }
 
-  if (tagMapData.length > 0) {
-    console.log(`🏷️ Creating ${tagMapData.length} tag mappings...`);
-    for (let i = 0; i < tagMapData.length; i += 100) {
-      const batch = tagMapData.slice(i, i + 100);
-      await prisma.tradeTagMap.createMany({ data: batch });
-    }
-  }
+  // Create a few daily reviews
+  const reviewEntries = [
+    {
+      daysAgo: 0,
+      summary: 'Good trading day. Reliance breakout trade worked well. Followed the plan and maintained discipline.',
+      whatWentWell: 'Waited for the breakout confirmation. Did not chase the trade. Exit was at target.',
+      mistakesMade: null,
+      emotionalState: 'confident',
+      lessonLearned: 'Patience at key resistance levels is rewarded.',
+      tomorrowPlan: 'Watch for TCS and Infosys earnings reaction. Focus on banking sector momentum.',
+    },
+    {
+      daysAgo: 1,
+      summary: 'Mixed day. TCS trade was a loss but managed risk well with stop loss.',
+      whatWentWell: 'Followed stop loss strictly. No revenge trading after the loss.',
+      mistakesMade: 'TCS entry was premature without confirmation candle.',
+      emotionalState: 'calm',
+      lessonLearned: 'Wait for confirmation before entering pullback trades in weak sectors.',
+      tomorrowPlan: 'Focus on strong sectors only. Avoid IT sector till clarity emerges.',
+    },
+    {
+      daysAgo: 2,
+      summary: 'Excellent day! HDFC Bank VWAP bounce was textbook. Large profits with well-managed risk.',
+      whatWentWell: 'Identified the VWAP bounce early. Scaled into the position as confidence grew.',
+      mistakesMade: null,
+      emotionalState: 'excited',
+      lessonLearned: 'VWAP + trend + volume = high probability setup. Increase size on these.',
+      tomorrowPlan: 'Review RBI policy impact on banking stocks. Look for follow-through trades.',
+    },
+  ];
 
-  // Create daily reviews for the past 30 days
-  const reviewEmotions = ['calm', 'confident', 'anxious', 'neutral', 'frustrated', 'excited'];
-  for (let i = 1; i <= 30; i++) {
-    const reviewDate = subDays(today, i);
-    const dayOfWeek = reviewDate.getDay();
-    if (dayOfWeek === 0 || dayOfWeek === 6) continue;
-
+  for (const rev of reviewEntries) {
+    const reviewDate = subDays(today, rev.daysAgo);
     await prisma.dailyReview.upsert({
       where: { userId_reviewDate: { userId: DEMO_USER_ID, reviewDate: reviewDate } },
       update: {},
       create: {
         userId: DEMO_USER_ID,
         reviewDate,
-        summary: i < 3 ? 'Overall good trading day. Followed the plan and managed risk well.' : null,
-        whatWentWell: i < 5 ? 'Stayed disciplined with stop losses. Did not chase trades.' : null,
-        mistakesMade: Math.random() > 0.6 ? 'Took a revenge trade after a loss. Need to stick to the plan.' : null,
-        emotionalState: reviewEmotions[Math.floor(Math.random() * reviewEmotions.length)],
-        lessonLearned: Math.random() > 0.5 ? 'Patience pays off. Wait for the right setup.' : null,
-        tomorrowPlan: Math.random() > 0.4 ? 'Focus on pullback setups in trending stocks. Review NVDA levels.' : null,
+        summary: rev.summary,
+        whatWentWell: rev.whatWentWell,
+        mistakesMade: rev.mistakesMade,
+        emotionalState: rev.emotionalState,
+        lessonLearned: rev.lessonLearned,
+        tomorrowPlan: rev.tomorrowPlan,
       },
     });
   }
 
-  // Create period reviews (weekly for past 8 weeks, monthly for past 4 months)
-  for (let w = 0; w < 8; w++) {
-    const endDate = subDays(today, w * 7);
-    const startDate = startOfWeek(endDate, { weekStartsOn: 1 });
-    await prisma.periodReview.upsert({
-      where: {
-        userId_periodType_startDate: { userId: DEMO_USER_ID, periodType: 'weekly', startDate },
-      },
-      update: {},
-      create: {
-        userId: DEMO_USER_ID,
-        periodType: 'weekly',
-        startDate,
-        endDate,
-        performanceSummary: w < 2 ? 'Strong week with 65% win rate. Best performing strategy was breakout trades.' : null,
-        bestSetups: w < 3 ? 'TSLA breakout, NVDA pullback' : null,
-        repeatedMistakes: w < 4 ? 'Moving stop loss too early on winning trades' : null,
-        ruleViolations: Math.random() > 0.5 ? 'Entered a trade without confirmation' : null,
-        improvementPlan: Math.random() > 0.4 ? 'Focus on holding winners longer. Implement trailing stops.' : null,
-      },
-    });
-  }
+  // Create one weekly review
+  const weekEnd = subDays(today, 0);
+  const weekStart = startOfWeek(weekEnd, { weekStartsOn: 1 });
+  await prisma.periodReview.upsert({
+    where: {
+      userId_periodType_startDate: { userId: DEMO_USER_ID, periodType: 'weekly', startDate: weekStart },
+    },
+    update: {},
+    create: {
+      userId: DEMO_USER_ID,
+      periodType: 'weekly',
+      startDate: weekStart,
+      endDate: weekEnd,
+      performanceSummary: 'Good week overall with 70% win rate. Best trades were HDFC Bank VWAP bounce and SBI breakout. Need to avoid counter-trend trades.',
+      bestSetups: 'HDFC Bank VWAP bounce, SBI breakout, Reliance resistance breakout',
+      repeatedMistakes: 'Counter-trend entries without confirmation (INFY short)',
+      ruleViolations: null,
+      improvementPlan: 'Focus only on trend-following setups. Avoid mean reversion in strong trends. Wait for confirmation candles.',
+    },
+  });
 
-  for (let m = 0; m < 4; m++) {
-    const endDate = subMonths(today, m);
-    const startDate = startOfMonth(endDate);
-    await prisma.periodReview.upsert({
-      where: {
-        userId_periodType_startDate: { userId: DEMO_USER_ID, periodType: 'monthly', startDate },
-      },
-      update: {},
-      create: {
-        userId: DEMO_USER_ID,
-        periodType: 'monthly',
-        startDate,
-        endDate,
-        performanceSummary: m < 2 ? 'Solid month overall. Improved consistency compared to previous month. Win rate up to 58%.' : null,
-        bestSetups: m < 3 ? 'AAPL momentum, QQQ breakout trades' : null,
-        repeatedMistakes: m < 3 ? 'Overtrading on low-confidence setups' : null,
-        ruleViolations: Math.random() > 0.5 ? 'Risked more than 2% on single trades' : null,
-        improvementPlan: Math.random() > 0.4 ? 'Reduce position sizes on lower-confidence setups. Review trade journal daily.' : null,
-      },
-    });
-  }
-
-  console.log('✅ Seed data created successfully!');
-  console.log(`   - ${tradesToCreate.length} trades`);
-  console.log(`   - ${tagNames.length} tags`);
-  console.log(`   - 8 weekly reviews`);
-  console.log(`   - 4 monthly reviews`);
-  console.log(`   - ~20 daily reviews`);
+  console.log('Seed data created successfully!');
+  console.log('   - 10 Indian stock market trades');
+  console.log('   - 8 tags');
+  console.log('   - 3 daily reviews');
+  console.log('   - 1 weekly review');
 }
 
 main()

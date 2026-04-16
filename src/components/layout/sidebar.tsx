@@ -9,7 +9,7 @@ import {
   PlusCircle,
   BookOpen,
   BarChart3,
-  Calendar,
+  CalendarDays,
   FileText,
   Settings,
   Upload,
@@ -17,19 +17,21 @@ import {
   ChevronRight,
   TrendingUp,
   X,
+  Sun,
+  Moon,
+  Monitor,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Separator } from '@/components/ui/separator';
 import { useTheme } from '@/lib/theme-provider';
-import { Sun, Moon, Monitor } from 'lucide-react';
 
 const navItems = [
   { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard },
   { id: 'trade-new', label: 'Add Trade', icon: PlusCircle },
   { id: 'journal', label: 'Trade Journal', icon: BookOpen },
   { id: 'analytics', label: 'Analytics', icon: BarChart3 },
-  { id: 'calendar', label: 'Calendar', icon: Calendar },
+  { id: 'calendar', label: 'Calendar', icon: CalendarDays },
   { id: 'reviews', label: 'Reviews', icon: FileText },
   { id: 'import-export', label: 'Import / Export', icon: Upload },
   { id: 'settings', label: 'Settings', icon: Settings },
@@ -66,41 +68,45 @@ export function AppSidebar() {
       {/* Mobile overlay */}
       {sidebarOpen && (
         <div
-          className="fixed inset-0 bg-black/50 z-40 lg:hidden"
+          className="fixed inset-0 bg-black/60 z-40 lg:hidden backdrop-blur-sm"
           onClick={() => setSidebarOpen(false)}
         />
       )}
 
       <aside
         className={cn(
-          'fixed left-0 top-0 z-50 h-full bg-card border-r border-border flex flex-col transition-all duration-300 ease-in-out',
+          'fixed left-0 top-0 z-50 h-full flex flex-col transition-all duration-300 ease-in-out',
           'lg:relative lg:z-auto',
+          'bg-[#0f0f11] border-r border-white/[0.06]',
           sidebarOpen ? 'w-64' : 'w-0 lg:w-16',
           !sidebarOpen && 'overflow-hidden lg:overflow-visible'
         )}
       >
-        {/* Logo */}
+        {/* Logo / Branding */}
         <div className={cn(
-          'flex items-center h-16 px-4 border-b border-border shrink-0',
+          'flex items-center h-16 px-4 border-b border-white/[0.06] shrink-0',
           !sidebarOpen && 'lg:justify-center lg:px-2'
         )}>
           {sidebarOpen && (
-            <div className="flex items-center gap-2 cursor-pointer" onClick={() => navigate('dashboard')}>
-              <div className="w-8 h-8 rounded-lg bg-primary flex items-center justify-center">
-                <TrendingUp className="w-5 h-5 text-primary-foreground" />
+            <div className="flex items-center gap-3 cursor-pointer" onClick={() => navigate('dashboard')}>
+              <div className="w-9 h-9 rounded-xl bg-primary/20 flex items-center justify-center border border-primary/30">
+                <TrendingUp className="w-5 h-5 text-primary" />
               </div>
-              <span className="font-bold text-lg tracking-tight">Heyjournal</span>
+              <div className="flex flex-col">
+                <span className="font-bold text-[15px] tracking-tight leading-tight">Trading Journal</span>
+                <span className="text-[10px] text-muted-foreground uppercase tracking-[0.15em] leading-tight">The Disciplined Observer</span>
+              </div>
             </div>
           )}
           {!sidebarOpen && (
-            <div className="w-8 h-8 rounded-lg bg-primary flex items-center justify-center cursor-pointer" onClick={() => navigate('dashboard')}>
-              <TrendingUp className="w-5 h-5 text-primary-foreground" />
+            <div className="w-9 h-9 rounded-xl bg-primary/20 flex items-center justify-center border border-primary/30 cursor-pointer" onClick={() => navigate('dashboard')}>
+              <TrendingUp className="w-5 h-5 text-primary" />
             </div>
           )}
           <Button
             variant="ghost"
             size="icon"
-            className="ml-auto lg:hidden"
+            className="ml-auto lg:hidden text-muted-foreground hover:text-foreground"
             onClick={() => setSidebarOpen(false)}
           >
             <X className="w-4 h-4" />
@@ -108,8 +114,8 @@ export function AppSidebar() {
         </div>
 
         {/* Navigation */}
-        <ScrollArea className="flex-1 py-4">
-          <nav className="space-y-1 px-3">
+        <ScrollArea className="flex-1 py-3">
+          <nav className="space-y-0.5 px-3">
             {navItems.map((item) => {
               const Icon = item.icon;
               const isActive = activeRouteKey === item.id;
@@ -119,14 +125,14 @@ export function AppSidebar() {
                   key={item.id}
                   onClick={() => handleNav(item.id)}
                   className={cn(
-                    'w-full flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors',
-                    'hover:bg-accent hover:text-accent-foreground',
-                    isActive && 'bg-accent text-accent-foreground',
+                    'w-full flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition-all duration-200',
+                    !isActive && 'text-muted-foreground hover:bg-white/[0.04] hover:text-foreground',
+                    isActive && 'bg-primary/15 text-primary',
                     !sidebarOpen && 'lg:justify-center lg:px-2'
                   )}
                   title={!sidebarOpen ? item.label : undefined}
                 >
-                  <Icon className="w-5 h-5 shrink-0" />
+                  <Icon className={cn('w-5 h-5 shrink-0', isActive && 'text-primary')} />
                   {sidebarOpen && <span>{item.label}</span>}
                 </button>
               );
@@ -134,7 +140,7 @@ export function AppSidebar() {
           </nav>
         </ScrollArea>
 
-        <Separator />
+        <Separator className="bg-white/[0.06]" />
 
         {/* Bottom controls */}
         <div className={cn(
@@ -146,6 +152,7 @@ export function AppSidebar() {
             size="icon"
             onClick={cycleTheme}
             title={`Theme: ${theme}`}
+            className="text-muted-foreground hover:text-foreground"
           >
             <ThemeIcon className="w-4 h-4" />
           </Button>
@@ -153,7 +160,7 @@ export function AppSidebar() {
             <Button
               variant="ghost"
               size="icon"
-              className="hidden lg:flex"
+              className="hidden lg:flex text-muted-foreground hover:text-foreground"
               onClick={() => setSidebarOpen(false)}
             >
               <ChevronLeft className="w-4 h-4" />

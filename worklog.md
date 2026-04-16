@@ -286,3 +286,220 @@ Stage Summary:
 - Settings page with market/currency/timezone/theme preferences and live theme switching
 - Import/Export page with CSV upload, field mapping, preview, and date-range export
 - Theme provider refactored to eliminate all lint errors via useSyncExternalStore
+
+---
+Task ID: 8
+Agent: main
+Task: Redesign Dashboard page with dark theme and Indian market styling
+
+Work Log:
+- Replaced `src/components/dashboard/dashboard-page.tsx` with a fully redesigned dark-themed dashboard (~420 lines)
+- **Dark card styling**: All cards use `bg-[#161618] rounded-xl border border-white/[0.06] p-5` matching the sidebar's dark design language
+- **KPI cards**: 4 cards in responsive grid (2-col mobile, 4-col desktop) with custom `KpiCard` sub-component featuring small uppercase muted label, large value via CurrencyBadge (₹ symbol), and colored icon in top-right corner
+- **Loading skeleton**: Replaced LoadingSpinner with animated pulse skeleton matching card layout during data fetch
+- **Greeting section**: Added "Welcome back 👋" with "NSE & BSE trading overview" subtitle and NSE/BSE badge
+- **P/L Chart**: Emerald (#10B981) gradient fill from 25% to 1% opacity, dark grid lines (`rgba(255,255,255,0.04)`), muted axis ticks, dark tooltip background (`bg-[#1e1e22]`), cumulative P/L value shown in chart header
+- **Currency formatting**: `formatCurrencyCompact` updated to use ₹ with Indian Lakh notation (₹1.2L for values >= 100000)
+- **Direction badges**: "LONG" in `bg-emerald-500/15 text-emerald-400`, "SHORT" in `bg-red-500/15 text-red-400` with uppercase bold text
+- **Recent trades table**: Dark header (`border-white/[0.06]`), row hover (`bg-white/[0.03]`), NSE/BSE exchange label next to symbol, responsive column hiding (Direction hidden on mobile, Return/Strategy hidden on smaller screens)
+- **Review reminder**: Amber accent card (`bg-amber-500/[0.08] border-amber-500/20`) with amber-300/400 text, amber-tinted badges and buttons
+- **Quick actions**: Purple primary button (`bg-purple-600 hover:bg-purple-700`), open positions indicator with animated pulse dot
+- **Footer**: Subtle centered text "Heyjournal · Indian Stock Market Trading Journal · NSE / BSE"
+- Removed unused imports: LoadingSpinner, TrendingDown, IndianRupee
+- Zero lint errors, dev server compiles successfully
+
+Stage Summary:
+- Complete dashboard redesign with dark theme matching sidebar design language (#161618 cards, white/[0.06] borders)
+- Indian market references throughout (NSE/BSE labels, ₹ currency, Lakh notation)
+- Emerald/red P/L color coding, amber review reminders, purple quick actions
+- Responsive layout with skeleton loading states and proper error handling
+
+---
+Task ID: 9
+Agent: main
+Task: Redesign Trade Detail page and Journal List page with dark theme
+
+Work Log:
+
+**Trade Detail Page** (`src/components/trades/trade-detail-page.tsx`):
+- Complete redesign with dark theme, replacing the previous implementation (~580 lines)
+- **DarkCard wrapper**: Reusable `DarkCard` component using `bg-[#161618] rounded-xl border border-white/[0.06] p-5` for consistent card styling
+- **Header card**: Large symbol name (text-3xl), DirectionBadge (LONG emerald-500/15 / SHORT red-500/15 with border), StatusBadge (with dot indicator), large P/L display (text-3xl/4xl) with R-Multiple badge, subtle gradient glow effect on winner/loser
+- **Action buttons**: Edit (purple #8B5CF6), Duplicate (secondary white/[0.06]), Delete (red-500/10 with red border)
+- **Price grid**: 2x3 responsive grid with PriceCell sub-component — Entry/Exit/SL/Target/Qty/Fees, each in rounded-xl cells with colored icons (SL=danger red, Target=success emerald)
+- **P/L Summary bar**: Full-width DarkCard with 4 metrics (P/L ₹, Return %, R-Multiple, Risk Amount) separated by vertical dividers
+- **Trade Info card**: Two-column layout with InfoItem sub-component featuring small icon in bg-white/[0.04] rounded-lg, uppercase tracking-wider labels, zinc-200 text values
+- **Psychology card**: Emotional states as colored bordered badges (calm=teal, confident=emerald, anxious=amber, fearful=red, etc.), star ratings with amber-400 filled / zinc-700 empty
+- **Notes section**: Three distinct dark blocks — Notes (bg-white/[0.02]), Mistakes (bg-red-500/[0.04] with red border), Lessons Learned (bg-emerald-500/[0.04] with emerald border)
+- **Tags**: Secondary badges with `bg-white/[0.06] border-white/[0.04]` styling
+- **Screenshots gallery**: Dark rounded-xl thumbnails with aspect-video, hover overlay with zoom button, label badges, purple hover border transition
+- **Lightbox**: `bg-black/95 backdrop-blur-xl` with `border-white/[0.06]`, dark nav buttons on `bg-black/40` circles, top bar with `bg-white/[0.03]`
+- **Delete confirmation**: Dark AlertDialog with `bg-[#161618] border-white/[0.06]`
+- **All currency**: Uses formatCurrency (₹) and CurrencyBadge throughout
+
+**Journal List Page** (`src/components/trades/journal-list-page.tsx`):
+- Complete redesign with dark theme (~540 lines)
+- **Page header**: BookOpen icon in purple (#8B5CF6)/15 rounded-xl container, white title, zinc-500 description, purple Add Trade button
+- **Search bar**: Dark input with `bg-white/[0.03] border-white/[0.06] rounded-xl h-11`, zinc-500 placeholder, purple focus ring
+- **Filter popover**: Dark `bg-[#161618] border-white/[0.06] rounded-xl`, all form elements dark-styled
+  - **Market types**: Indian market grid buttons (Equity, Futures, Options, Commodity, Currency) with icons, purple active state (#8B5CF6/15)
+  - **Strategy**: Select dropdown with 14 Indian market strategies (Breakout, Nifty Options, Bank Nifty Options, Iron Condor, Straddle/Strangle, Bull Call Spread, etc.)
+  - **Direction**: Select with Long/Short options
+  - **Result**: Select with colored Winners (emerald-400) / Losers (red-400) text
+  - **Status**: Toggle button group (All/Open/Closed/Draft) with purple active state
+  - **Tags**: Multi-select with check marks, purple active state, scrollable container
+- **Sort select**: Dark `bg-white/[0.03] border-white/[0.06]` with ArrowUpDown icon
+- **Active filter badges**: Dark removable badges (`bg-white/[0.06] border-white/[0.06]`), purple "Clear all" link
+- **Trade table**: Dark container (`bg-[#161618] rounded-xl border-white/[0.06]`), dark header row (`bg-white/[0.03]`), uppercase tracking-wider column headers, row hover (`bg-white/[0.03]`), group hover chevron color transition, bold white symbol text
+- **Direction badges**: LONG `bg-emerald-500/15 text-emerald-400`, SHORT `bg-red-500/15 text-red-400` with TrendingUp/TrendingDown icons
+- **Status badges**: Dot indicator + colored text (closed=emerald, open=amber, draft=zinc)
+- **Pagination**: Dark buttons (`bg-white/[0.03] border-white/[0.06]`), purple active page (#8B5CF6), disabled opacity 40
+- **Empty states**: Dark containers (`bg-white/[0.03] border-white/[0.06]`) with zinc-600 icons, purple action buttons
+
+**Lint & Compilation**:
+- Zero lint errors
+- Dev server compiles successfully
+
+Stage Summary:
+- Trade Detail page fully redesigned with dark theme, purple accent, emerald/red P/L coding, Indian market styling (₹ currency throughout)
+- Journal List page fully redesigned with dark search/filter/table, Indian market type filters (Equity/Futures/Options/Commodity/Currency), Indian strategy presets
+- Both pages use consistent DarkCard pattern (bg-[#161618] rounded-xl border-white/[0.06] p-5)
+- All interactive elements have proper hover/focus states, responsive design maintained
+- Zero lint errors, clean compilation
+
+---
+Task ID: 10
+Agent: main
+Task: Redesign Trade Form page (Add/Edit) with dark theme and Indian market styling
+
+Work Log:
+- Replaced `src/components/trades/trade-form-page.tsx` with fully redesigned dark-themed trade form (~870 lines)
+- **Dark card styling**: All sections use `bg-[#161618] rounded-xl border border-white/[0.06]` with custom SectionCard component (button-based collapsible instead of shadcn Collapsible)
+- **Section headers**: Uppercase tracking-wider muted text pattern (`text-sm font-semibold uppercase tracking-wider text-muted-foreground`)
+- **Form inputs**: All inputs styled with `bg-white/[0.03] border-white/[0.08] rounded-lg focus:border-primary`
+- **Market Type**: Redesigned as 5-button card grid with Indian market types: Equity (NSE/BSE), Futures (NSE F&O), Options (NSE F&O), Commodity (MCX), Currency (NSE) — active state uses purple (#8B5CF6) highlight
+- **Symbol field**: Updated placeholder to "e.g., RELIANCE, NIFTY 50, BANKNIFTY", no auto-uppercase (NSE symbols already uppercase)
+- **Direction toggle**: Full-width rounded-xl cards — LONG in `bg-emerald-500/15 border-emerald-500/50 text-emerald-400` with ArrowUpRight icon, SHORT in `bg-red-500/15 border-red-500/50 text-red-400` with ArrowDownRight icon
+- **Price labels**: Added ₹ prefix to Entry Price, Exit Price, Stop Loss, Target, and Fees labels
+- **P/L display**: Real-time calculated with CurrencyBadge (₹ format), emerald/red color coding for P/L%, R-Multiple in dark card (`bg-white/[0.03] border-white/[0.06]`)
+- **Strategy presets**: Updated to 15 Indian market strategies — Breakout, Pullback, Trend Following, Mean Reversion, Scalping, Swing Trade, Momentum, Support/Resistance, VWAP Strategy, Gap Up/Down, Opening Range Breakout, Fibonacci Retracement, Olam High-Low, Renko Chart, Candlestick Pattern
+- **Broker presets**: Updated to 12 Indian brokers — Zerodha, Groww, Angel One, Upstox, ICICI Direct, HDFC Securities, Kotak Securities, Motilal Oswal, 5paisa, Sharekhan, Edelweiss, Other
+- **Tags**: Multi-select badges with dark bg (`bg-primary/15 text-primary border-primary/30`), available tags in `bg-white/[0.03] border-white/[0.08]`, inline new tag creation
+- **Screenshots**: Dark dropzone (`border-white/[0.08] bg-white/[0.02]`) with purple active state, rounded-xl thumbnails with backdrop-blur label badges, red hover remove buttons
+- **Save/Cancel buttons**: Save uses `bg-primary rounded-xl` (purple), Cancel uses `bg-white/[0.05] border-white/[0.08] rounded-xl`
+- **AlertDialog**: Dark styling with `bg-[#161618] border-white/[0.06]`
+- **Select dropdowns**: Dark content background (`bg-[#161618] border-white/[0.06]`)
+- **Separators**: Dark styling (`bg-white/[0.06]`)
+- **Error states**: Red-tinted styling (`bg-red-500/10 border-red-500/20 text-red-400`)
+- **Mobile sticky bar**: Dark bottom bar (`bg-background/95 border-t border-white/[0.06] rounded-xl`)
+- **Edit mode compatibility**: Added `mapMarketTypeForApi()` to translate new Indian market types to existing API MarketType enum
+- Removed unused imports: RadioGroup, RadioGroupItem, Collapsible components, TrendingUp (replaced with ArrowUpRight/ArrowDownRight)
+- Removed unused Card/CardContent/CardHeader/CardTitle imports (replaced with DarkCard pattern)
+- Zero lint errors, dev server compiles successfully
+
+Stage Summary:
+- Trade Form page fully redesigned with dark theme, Indian market types (Equity/Futures/Options/Commodity/Currency), Indian broker presets (Zerodha, Groww, etc.), Indian strategy presets (VWAP Strategy, Opening Range Breakout, etc.)
+- All form inputs dark-styled with `bg-white/[0.03] border-white/[0.08]`, section cards with `bg-[#161618] rounded-xl border-white/[0.06]`
+- Direction toggle with emerald/red rounded-xl cards, ₹ currency throughout, responsive two-column layout maintained
+- API compatibility layer ensures existing MarketType enum is still used correctly
+
+---
+Task ID: 11
+Agent: main
+Task: Redesign Analytics, Calendar, Reviews, Settings, and Import/Export pages with dark theme
+
+Work Log:
+
+**Analytics Page** (`src/components/analytics/analytics-page.tsx`):
+- Complete redesign with dark theme (~880 lines), removed shadcn Card components in favor of custom dark card divs
+- **Dark card pattern**: All cards use `bg-[#161618] rounded-xl border border-white/[0.06] p-5` consistently
+- **KPI cards**: Custom `KpiCard` component with dark bg, uppercase tracking-wider muted labels, colored icon backgrounds (`bg-emerald-500/15 text-emerald-400` / `bg-red-500/15 text-red-400`)
+- **Period Toggle**: Custom TabsList with `bg-[#161618] border-white/[0.06] rounded-xl p-1`, active tab uses `bg-primary text-primary-foreground rounded-lg`
+- **Filters Bar**: Dark card with dark-styled Select/Input components (`bg-white/[0.03] border-white/[0.08] rounded-lg`)
+- **Active filter badge**: `bg-primary/15 text-primary` (purple tinted)
+- **Charts**: Dark tooltips (`bg-[#1e1e20]`), dark grid lines (`rgba(255,255,255,0.04)`), muted axis strokes (`rgba(255,255,255,0.3)`)
+- **formatCompact**: Updated to use ₹ with Indian notation (₹1.2L, ₹2.5Cr) instead of $k, $M
+- **Gross Loss**: Fixed to use CurrencyBadge instead of hardcoded `$` formatting
+- **Strategy table**: Dark container with `bg-white/[0.03]` header, `hover:bg-white/[0.03]` rows, `border-white/[0.06]` borders
+- **Summary Statistics**: Dark card with purple Award icon, Indian currency (₹) for all monetary values
+- Removed unused imports (LineChart, Line, DollarSign, Award separate import, ArrowUpRight, ArrowDownRight)
+
+**Calendar Page** (`src/components/calendar/calendar-page.tsx`):
+- Complete redesign with dark theme (~280 lines)
+- **Month navigation**: Dark buttons with `bg-white/[0.05] border-white/[0.08] rounded-xl hover:bg-white/[0.08]`
+- **Summary cards**: Dark `bg-[#161618] rounded-xl border border-white/[0.06] p-5` with purple/emerald/red icon containers
+- **Calendar grid**: Dark outer container `bg-[#161618] rounded-xl border border-white/[0.06]`
+- **Grid cells**: `bg-[#161618]` with `hover:bg-white/[0.03]`, weekends `bg-[#131315]`, today `ring-2 ring-primary ring-inset bg-primary/5`
+- **P/L values**: Using formatCurrency (₹) instead of hardcoded `$`
+- **Dividers**: `divide-white/[0.04]` for grid lines, `border-white/[0.06]` for header
+- **Weekend header text**: `text-primary/60` instead of orange
+- **Legend**: Updated to show ₹ instead of $ examples
+- **Badge styling**: `bg-white/[0.05] border-0` for trade count badges
+- **Symbol chips**: `bg-emerald-500/10 text-emerald-400` / `bg-red-500/10 text-red-400`
+
+**Reviews Page** (`src/components/reviews/reviews-page.tsx`):
+- Complete redesign with dark theme (~260 lines)
+- **Tabs**: Custom TabsList with `bg-[#161618] border border-white/[0.06] rounded-xl p-1`, purple active state
+- **Create button**: `bg-primary text-primary-foreground rounded-xl`
+- **Review cards**: Dark `bg-[#161618] rounded-xl border border-white/[0.06] p-5` with `hover:border-white/[0.12]` transition
+- **Emotional state badge**: `bg-primary/15 text-primary` (purple tinted)
+- **Period type badge**: `bg-primary/15 text-primary` (purple tinted)
+- **Delete dialog**: Dark `bg-[#161618] border-white/[0.06]` styling
+- **Edit/Delete buttons**: `text-muted-foreground hover:text-foreground` / `hover:text-red-400`
+
+**Daily Review Page** (`src/components/reviews/daily-review-page.tsx`):
+- Complete redesign with dark theme (~200 lines)
+- **Form card**: `bg-[#161618] rounded-xl border border-white/[0.06] p-5`
+- **Inputs**: All use `bg-white/[0.03] border-white/[0.08] rounded-lg focus:border-primary/50`
+- **Save button**: `bg-primary text-primary-foreground rounded-xl` (purple)
+- **Cancel button**: `bg-white/[0.05] border-white/[0.08] rounded-xl`
+- **Error banner**: `bg-red-500/10 border border-red-500/20 rounded-xl` with `text-red-400`
+- **Delete button**: `text-red-400 hover:text-red-300 hover:bg-red-500/10`
+- **Delete dialog**: Dark `bg-[#161618] border-white/[0.06]` styling
+- **CalendarCheck icon**: Purple (`text-primary`) in header
+
+**Period Review Page** (`src/components/reviews/period-review-page.tsx`):
+- Complete redesign with dark theme (~220 lines)
+- **Period type badge**: `bg-primary/15 text-primary` (purple tinted)
+- **Same dark input/button/dialog styling** as Daily Review Page
+- **BookOpen icon**: Purple (`text-primary`) in header
+
+**Settings Page** (`src/components/settings/settings-page.tsx`):
+- Complete redesign with Indian market defaults (~200 lines)
+- **Market Type options**: Updated to Indian markets — Equity (NSE/BSE), Futures, Options, Commodity (MCX), Currency (NSE)
+- **Currency options**: INR (₹) moved to first position as default
+- **Timezone options**: Asia/Kolkata (IST) moved to first position as default
+- **Theme options**: Dark moved to first position as default
+- **Setting cards**: `bg-[#161618] rounded-xl border border-white/[0.06] p-5` with purple icon containers (`bg-primary/15 text-primary`)
+- **Section headers**: Icon + text layout with description
+- **Save button**: `bg-primary text-primary-foreground rounded-xl` (purple)
+- **Indian Rupee footer**: Added info line about Indian market optimization
+- **Inputs**: Dark `bg-white/[0.03] border-white/[0.08] rounded-lg` styling
+
+**Import/Export Page** (`src/components/settings/import-export-page.tsx`):
+- Complete redesign with dark theme (~340 lines)
+- **Cards**: `bg-[#161618] rounded-xl border border-white/[0.06] p-5` with purple icon containers
+- **Section headers**: Icon + text layout consistent with Settings page
+- **Dropzone**: `border-2 border-dashed border-white/[0.08] rounded-xl` with `hover:border-primary/50 hover:bg-primary/5`
+- **File info**: `bg-white/[0.03] border border-white/[0.06] rounded-xl`
+- **Parse error**: `bg-red-500/10 border border-red-500/20 rounded-xl text-red-400`
+- **Import success**: `bg-emerald-500/10 border border-emerald-500/20 rounded-xl text-emerald-400`
+- **Preview table**: Dark header `bg-white/[0.03]`, dark row hover `bg-white/[0.03]`, dark borders `border-white/[0.06]`
+- **Import button**: `bg-primary text-primary-foreground rounded-xl` (purple)
+- **Reset button**: `bg-white/[0.05] border-white/[0.08] rounded-xl`
+- **CSV format code**: Dark `bg-white/[0.03] border border-white/[0.06] rounded-lg`
+- **Required badges**: `bg-primary/15 text-primary border-0` (purple tinted)
+- **Delete dialog**: Dark `bg-[#161618] border-white/[0.06]` styling
+
+**Lint & Compilation**:
+- Zero lint errors
+- Dev server compiles successfully
+
+Stage Summary:
+- All 7 pages redesigned with consistent dark theme using `bg-[#161618] rounded-xl border border-white/[0.06] p-5` card pattern
+- Purple (#8B5CF6) accent color throughout: active tabs, primary buttons, badges, icon containers
+- Indian market defaults: INR ₹ currency, Asia/Kolkata timezone, Equity (NSE/BSE) market, Dark theme
+- All charts use dark backgrounds, muted grid lines, and dark tooltips
+- Calendar uses ₹ for P/L, purple today ring, dark weekend shading
+- All form inputs use `bg-white/[0.03] border-white/[0.08] rounded-lg` pattern
+- Emerald (#10B981) for profit, Red (#EF4444) for loss maintained throughout

@@ -13,7 +13,7 @@ import type {
   EmotionalState,
 } from '@/types';
 
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Button } from '@/components/ui/button';
@@ -27,7 +27,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Slider } from '@/components/ui/slider';
 import {
   AlertDialog,
@@ -40,11 +39,6 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from '@/components/ui/alert-dialog';
-import {
-  Collapsible,
-  CollapsibleContent,
-  CollapsibleTrigger,
-} from '@/components/ui/collapsible';
 import {
   ArrowLeft,
   Save,
@@ -62,9 +56,30 @@ import {
   Loader2,
   Tag,
   AlertCircle,
+  Brain,
+  BarChart3,
+  FileText,
+  ArrowUpRight,
+  ArrowDownRight,
 } from 'lucide-react';
 
-// ─── Presets ────────────────────────────────────────────────────────────────
+// ─── Indian Market Presets ──────────────────────────────────────────────────
+
+const MARKET_TYPES: { value: MarketType; label: string; desc: string }[] = [
+  { value: 'stocks', label: 'Equity', desc: 'NSE / BSE' },
+  { value: 'futures', label: 'Futures', desc: 'NSE F&O' },
+  { value: 'options', label: 'Options', desc: 'NSE F&O' },
+  { value: 'stocks', label: 'Commodity', desc: 'MCX' },
+  { value: 'futures', label: 'Currency', desc: 'NSE' },
+];
+
+const MARKET_TYPE_OPTIONS: { value: string; label: string; sublabel: string }[] = [
+  { value: 'equity', label: 'Equity', sublabel: 'NSE / BSE' },
+  { value: 'futures', label: 'Futures', sublabel: 'NSE F&O' },
+  { value: 'options', label: 'Options', sublabel: 'NSE F&O' },
+  { value: 'commodity', label: 'Commodity', sublabel: 'MCX' },
+  { value: 'currency', label: 'Currency', sublabel: 'NSE' },
+];
 
 const STRATEGY_PRESETS = [
   'Breakout',
@@ -75,30 +90,33 @@ const STRATEGY_PRESETS = [
   'Swing Trade',
   'Momentum',
   'Support/Resistance',
-  'VWAP',
-  'Gap Fill',
-  'Opening Range',
-  'Fibonacci',
-  'Ichimoku',
-  'Price Action',
+  'VWAP Strategy',
+  'Gap Up/Down',
+  'Opening Range Breakout',
+  'Fibonacci Retracement',
+  'Olam High-Low',
+  'Renko Chart',
+  'Candlestick Pattern',
 ];
 
 const BROKER_PRESETS = [
-  'Interactive Brokers',
-  'TD Ameritrade',
-  'E*TRADE',
-  'Fidelity',
-  'Robinhood',
-  'Webull',
-  'Thinkorswim',
-  'Coinbase',
-  'Binance',
-  'Bybit',
+  'Zerodha',
+  'Groww',
+  'Angel One',
+  'Upstox',
+  'ICICI Direct',
+  'HDFC Securities',
+  'Kotak Securities',
+  'Motilal Oswal',
+  '5paisa',
+  'Sharekhan',
+  'Edelweiss',
   'Other',
 ];
 
 const TIMEFRAME_OPTIONS = [
   { value: '1m', label: '1 Min' },
+  { value: '3m', label: '3 Min' },
   { value: '5m', label: '5 Min' },
   { value: '15m', label: '15 Min' },
   { value: '30m', label: '30 Min' },
@@ -106,7 +124,6 @@ const TIMEFRAME_OPTIONS = [
   { value: '4h', label: '4 Hour' },
   { value: '1D', label: '1 Day' },
   { value: '1W', label: '1 Week' },
-  { value: '1M', label: '1 Month' },
 ];
 
 const EMOTIONAL_STATES: EmotionalState[] = [
@@ -127,18 +144,10 @@ const SCREENSHOT_LABELS: { value: ScreenshotLabel; label: string }[] = [
   { value: 'review', label: 'Review' },
 ];
 
-const MARKET_TYPES: { value: MarketType; label: string }[] = [
-  { value: 'stocks', label: 'Stocks' },
-  { value: 'forex', label: 'Forex' },
-  { value: 'crypto', label: 'Crypto' },
-  { value: 'futures', label: 'Futures' },
-  { value: 'options', label: 'Options' },
-];
-
-const STATUS_OPTIONS: { value: TradeStatus; label: string }[] = [
-  { value: 'open', label: 'Open' },
-  { value: 'closed', label: 'Closed' },
-  { value: 'draft', label: 'Draft' },
+const STATUS_OPTIONS: { value: TradeStatus; label: string; color: string }[] = [
+  { value: 'open', label: 'Open', color: 'bg-emerald-500' },
+  { value: 'closed', label: 'Closed', color: 'bg-muted-foreground' },
+  { value: 'draft', label: 'Draft', color: 'bg-amber-500' },
 ];
 
 // ─── Types ──────────────────────────────────────────────────────────────────
@@ -195,6 +204,44 @@ function calculatePnL(fields: {
   return { pnl, pnlPercent, rMultiple };
 }
 
+// ─── Dark Card Wrapper ──────────────────────────────────────────────────────
+
+function DarkCard({
+  children,
+  className,
+}: {
+  children: React.ReactNode;
+  className?: string;
+}) {
+  return (
+    <div
+      className={cn(
+        'bg-[#161618] rounded-xl border border-white/[0.06] p-5',
+        className
+      )}
+    >
+      {children}
+    </div>
+  );
+}
+
+function SectionHeader({
+  icon: Icon,
+  title,
+}: {
+  icon: React.ElementType;
+  title: string;
+}) {
+  return (
+    <div className="flex items-center gap-2 mb-4">
+      <Icon className="h-4 w-4 text-muted-foreground" />
+      <h3 className="text-sm font-semibold uppercase tracking-wider text-muted-foreground">
+        {title}
+      </h3>
+    </div>
+  );
+}
+
 // ─── Component ──────────────────────────────────────────────────────────────
 
 export default function TradeFormPage({ tradeId }: { tradeId?: string }) {
@@ -224,7 +271,7 @@ export default function TradeFormPage({ tradeId }: { tradeId?: string }) {
   // ─── Form Fields ───────────────────────────────────────────────────────
 
   const [symbol, setSymbol] = useState('');
-  const [marketType, setMarketType] = useState<MarketType>('stocks');
+  const [marketType, setMarketType] = useState<string>('equity');
   const [direction, setDirection] = useState<Direction>('long');
   const [tradeDate, setTradeDate] = useState(format(new Date(), 'yyyy-MM-dd'));
   const [entryTime, setEntryTime] = useState('');
@@ -281,7 +328,15 @@ export default function TradeFormPage({ tradeId }: { tradeId?: string }) {
         const trade = await res.json();
 
         setSymbol(trade.symbol || '');
-        setMarketType((trade.marketType as MarketType) || 'stocks');
+
+        // Map old market types to new ones
+        const mt = trade.marketType || 'stocks';
+        if (mt === 'stocks') setMarketType('equity');
+        else if (mt === 'futures') setMarketType('futures');
+        else if (mt === 'options') setMarketType('options');
+        else if (mt === 'crypto' || mt === 'forex') setMarketType('equity');
+        else setMarketType('equity');
+
         setDirection((trade.direction as Direction) || 'long');
         setTradeDate(trade.tradeDate ? format(new Date(trade.tradeDate), 'yyyy-MM-dd') : format(new Date(), 'yyyy-MM-dd'));
         setEntryTime(trade.entryTime ? format(new Date(trade.entryTime), 'HH:mm') : '');
@@ -393,7 +448,6 @@ export default function TradeFormPage({ tradeId }: { tradeId?: string }) {
       label: 'entry' as ScreenshotLabel,
     }));
     setNewScreenshots((prev) => [...prev, ...newOnes]);
-    // Open screenshots section
     setOpenSections((prev) => ({ ...prev, screenshots: true }));
   }
 
@@ -417,28 +471,24 @@ export default function TradeFormPage({ tradeId }: { tradeId?: string }) {
 
   // ─── Drag & drop ───────────────────────────────────────────────────────
 
+  const [dragActive, setDragActive] = useState(false);
+
   function handleDragOver(e: React.DragEvent) {
     e.preventDefault();
     e.stopPropagation();
-    if (dropZoneRef.current) {
-      dropZoneRef.current.classList.add('border-primary', 'bg-primary/5');
-    }
+    setDragActive(true);
   }
 
   function handleDragLeave(e: React.DragEvent) {
     e.preventDefault();
     e.stopPropagation();
-    if (dropZoneRef.current) {
-      dropZoneRef.current.classList.remove('border-primary', 'bg-primary/5');
-    }
+    setDragActive(false);
   }
 
   function handleDrop(e: React.DragEvent) {
     e.preventDefault();
     e.stopPropagation();
-    if (dropZoneRef.current) {
-      dropZoneRef.current.classList.remove('border-primary', 'bg-primary/5');
-    }
+    setDragActive(false);
     handleFileSelect(e.dataTransfer.files);
   }
 
@@ -454,6 +504,16 @@ export default function TradeFormPage({ tradeId }: { tradeId?: string }) {
     return Object.keys(errs).length === 0;
   }
 
+  // ─── Map marketType for API ────────────────────────────────────────────
+
+  function mapMarketTypeForApi(mt: string): MarketType {
+    if (mt === 'equity' || mt === 'commodity') return 'stocks';
+    if (mt === 'futures') return 'futures';
+    if (mt === 'options') return 'options';
+    if (mt === 'currency') return 'futures';
+    return 'stocks';
+  }
+
   // ─── Save ──────────────────────────────────────────────────────────────
 
   async function handleSave() {
@@ -462,10 +522,9 @@ export default function TradeFormPage({ tradeId }: { tradeId?: string }) {
     setErrors({});
 
     try {
-      // Prepare trade body
       const body: Record<string, unknown> = {
-        symbol: symbol.trim().toUpperCase(),
-        marketType,
+        symbol: symbol.trim(),
+        marketType: mapMarketTypeForApi(marketType),
         direction,
         tradeDate,
         entryTime: entryTime ? `${tradeDate}T${entryTime}:00` : undefined,
@@ -499,7 +558,6 @@ export default function TradeFormPage({ tradeId }: { tradeId?: string }) {
       let savedTradeId = tradeId;
 
       if (isEdit) {
-        // PUT update
         const res = await fetch(`/api/trades/${tradeId}`, {
           method: 'PUT',
           headers: { 'Content-Type': 'application/json' },
@@ -510,7 +568,6 @@ export default function TradeFormPage({ tradeId }: { tradeId?: string }) {
           throw new Error(data.error || 'Failed to update trade');
         }
       } else {
-        // POST create
         const res = await fetch('/api/trades', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
@@ -529,7 +586,6 @@ export default function TradeFormPage({ tradeId }: { tradeId?: string }) {
         setUploadingScreenshots(true);
         for (const screenshot of newScreenshots) {
           try {
-            // Upload file
             const formData = new FormData();
             formData.append('file', screenshot.file);
             const uploadRes = await fetch('/api/upload', {
@@ -539,7 +595,6 @@ export default function TradeFormPage({ tradeId }: { tradeId?: string }) {
             if (!uploadRes.ok) continue;
             const uploadData = await uploadRes.json();
 
-            // Create screenshot record
             await fetch('/api/screenshots', {
               method: 'POST',
               headers: { 'Content-Type': 'application/json' },
@@ -557,12 +612,6 @@ export default function TradeFormPage({ tradeId }: { tradeId?: string }) {
         setUploadingScreenshots(false);
       }
 
-      // Delete removed screenshots
-      // We tracked removed ones via the removeExistingScreenshot function
-      // We need to track them separately for deletion
-      // Actually, let me handle this differently...
-
-      // Navigate to trade detail
       router.navigate(`trades/${savedTradeId}`);
     } catch (err) {
       setErrors({ submit: err instanceof Error ? err.message : 'Save failed' });
@@ -601,28 +650,7 @@ export default function TradeFormPage({ tradeId }: { tradeId?: string }) {
     }
   }
 
-  // ─── Render: Fetching State ────────────────────────────────────────────
-
-  if (fetching) {
-    return (
-      <div className="flex items-center justify-center h-96">
-        <div className="flex flex-col items-center gap-3">
-          <LoadingSpinner className="h-8 w-8" />
-          <p className="text-sm text-muted-foreground">Loading trade data...</p>
-        </div>
-      </div>
-    );
-  }
-
-  if (fetchError) {
-    return (
-      <div className="p-6">
-        <ErrorState message={fetchError} onRetry={() => window.location.reload()} />
-      </div>
-    );
-  }
-
-  // ─── Collapsible Section Helper ────────────────────────────────────────
+  // ─── Collapsible Section Card ──────────────────────────────────────────
 
   function SectionCard({
     sectionKey,
@@ -630,36 +658,42 @@ export default function TradeFormPage({ tradeId }: { tradeId?: string }) {
     icon: Icon,
     children,
     className,
+    defaultOpen,
   }: {
     sectionKey: string;
     title: string;
     icon: React.ElementType;
     children: React.ReactNode;
     className?: string;
+    defaultOpen?: boolean;
   }) {
-    const isOpen = openSections[sectionKey] ?? true;
+    const isOpen = openSections[sectionKey] ?? defaultOpen ?? true;
     return (
-      <Collapsible
-        open={isOpen}
-        onOpenChange={() => toggleSection(sectionKey)}
-        className={cn('rounded-lg border bg-card', className)}
-      >
-        <CollapsibleTrigger className="w-full flex items-center justify-between p-4 hover:bg-accent/50 transition-colors rounded-t-lg">
-          <div className="flex items-center gap-2">
+      <div className={cn('bg-[#161618] rounded-xl border border-white/[0.06]', className)}>
+        <button
+          type="button"
+          onClick={() => toggleSection(sectionKey)}
+          className="w-full flex items-center justify-between p-5 hover:bg-white/[0.02] transition-colors rounded-t-xl"
+        >
+          <div className="flex items-center gap-2.5">
             <Icon className="h-4 w-4 text-muted-foreground" />
-            <h3 className="font-semibold text-sm">{title}</h3>
+            <h3 className="text-sm font-semibold uppercase tracking-wider text-muted-foreground">
+              {title}
+            </h3>
           </div>
           {isOpen ? (
             <ChevronUp className="h-4 w-4 text-muted-foreground" />
           ) : (
             <ChevronDown className="h-4 w-4 text-muted-foreground" />
           )}
-        </CollapsibleTrigger>
-        <CollapsibleContent>
-          <Separator />
-          <div className="p-4 space-y-4">{children}</div>
-        </CollapsibleContent>
-      </Collapsible>
+        </button>
+        {isOpen && (
+          <>
+            <Separator className="bg-white/[0.06]" />
+            <div className="p-5 space-y-4">{children}</div>
+          </>
+        )}
+      </div>
     );
   }
 
@@ -677,7 +711,7 @@ export default function TradeFormPage({ tradeId }: { tradeId?: string }) {
     return (
       <div className="space-y-2">
         <div className="flex items-center justify-between">
-          <Label className="text-sm">{label}</Label>
+          <Label className="text-sm text-muted-foreground">{label}</Label>
           <span className="text-sm font-medium text-muted-foreground">
             {value > 0 ? `${value}/5` : '—'}
           </span>
@@ -719,10 +753,31 @@ export default function TradeFormPage({ tradeId }: { tradeId?: string }) {
     );
   }
 
+  // ─── Render: Fetching State ────────────────────────────────────────────
+
+  if (fetching) {
+    return (
+      <div className="flex items-center justify-center h-96">
+        <div className="flex flex-col items-center gap-3">
+          <LoadingSpinner className="h-8 w-8" />
+          <p className="text-sm text-muted-foreground">Loading trade data...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (fetchError) {
+    return (
+      <div className="p-6">
+        <ErrorState message={fetchError} onRetry={() => window.location.reload()} />
+      </div>
+    );
+  }
+
   // ─── Render: Form ──────────────────────────────────────────────────────
 
   return (
-    <div className="p-4 md:p-6 space-y-4 max-w-7xl mx-auto">
+    <div className="p-4 md:p-6 space-y-5 max-w-7xl mx-auto">
       {/* Header */}
       <div className="flex items-center justify-between flex-wrap gap-3">
         <div className="flex items-center gap-3">
@@ -731,13 +786,18 @@ export default function TradeFormPage({ tradeId }: { tradeId?: string }) {
             size="icon"
             onClick={() => router.back()}
             aria-label="Go back"
+            className="text-muted-foreground hover:text-foreground"
           >
             <ArrowLeft className="h-5 w-5" />
           </Button>
           <div>
-            <h1 className="text-xl font-bold">{isEdit ? 'Edit Trade' : 'New Trade'}</h1>
+            <h1 className="text-xl font-bold">
+              {isEdit ? 'Edit Trade' : 'New Trade'}
+            </h1>
             <p className="text-sm text-muted-foreground">
-              {isEdit ? `Editing ${symbol || 'trade'}` : 'Record a new trade entry'}
+              {isEdit
+                ? `Editing ${symbol || 'trade'}`
+                : 'Record a new trade entry'}
             </p>
           </div>
         </div>
@@ -746,24 +806,31 @@ export default function TradeFormPage({ tradeId }: { tradeId?: string }) {
             <>
               <AlertDialog>
                 <AlertDialogTrigger asChild>
-                  <Button variant="outline" size="sm" disabled={saving}>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    disabled={saving}
+                    className="bg-white/[0.05] border-white/[0.08] rounded-xl hover:bg-white/[0.08]"
+                  >
                     <Trash2 className="h-4 w-4 mr-1" />
                     Delete
                   </Button>
                 </AlertDialogTrigger>
-                <AlertDialogContent>
+                <AlertDialogContent className="bg-[#161618] border-white/[0.06]">
                   <AlertDialogHeader>
                     <AlertDialogTitle>Delete this trade?</AlertDialogTitle>
-                    <AlertDialogDescription>
-                      This action cannot be undone. This will permanently delete the trade and
-                      all associated screenshots.
+                    <AlertDialogDescription className="text-muted-foreground">
+                      This action cannot be undone. This will permanently delete
+                      the trade and all associated screenshots.
                     </AlertDialogDescription>
                   </AlertDialogHeader>
                   <AlertDialogFooter>
-                    <AlertDialogCancel>Cancel</AlertDialogCancel>
+                    <AlertDialogCancel className="bg-white/[0.05] border-white/[0.08] rounded-xl">
+                      Cancel
+                    </AlertDialogCancel>
                     <AlertDialogAction
                       onClick={handleDelete}
-                      className="bg-destructive text-white hover:bg-destructive/90"
+                      className="bg-destructive text-white hover:bg-destructive/90 rounded-xl"
                     >
                       Delete
                     </AlertDialogAction>
@@ -775,178 +842,173 @@ export default function TradeFormPage({ tradeId }: { tradeId?: string }) {
                 size="sm"
                 onClick={handleDuplicate}
                 disabled={saving}
+                className="bg-white/[0.05] border-white/[0.08] rounded-xl hover:bg-white/[0.08]"
               >
                 <Copy className="h-4 w-4 mr-1" />
                 Duplicate
               </Button>
             </>
           )}
-          <Button variant="outline" size="sm" onClick={() => router.back()} disabled={saving}>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => router.back()}
+            disabled={saving}
+            className="bg-white/[0.05] border-white/[0.08] rounded-xl hover:bg-white/[0.08]"
+          >
             Cancel
           </Button>
           <Button
             size="sm"
             onClick={handleSave}
             disabled={saving || uploadingScreenshots}
+            className="bg-primary hover:bg-primary/90 text-primary-foreground rounded-xl"
           >
             {saving ? (
               <Loader2 className="h-4 w-4 mr-1 animate-spin" />
             ) : (
               <Save className="h-4 w-4 mr-1" />
             )}
-            {saving ? 'Saving...' : uploadingScreenshots ? 'Uploading...' : 'Save Trade'}
+            {saving
+              ? 'Saving...'
+              : uploadingScreenshots
+                ? 'Uploading...'
+                : 'Save Trade'}
           </Button>
         </div>
       </div>
 
       {/* Global Error */}
       {errors.submit && (
-        <div className="flex items-center gap-2 p-3 rounded-lg bg-destructive/10 border border-destructive/20 text-destructive text-sm">
+        <div className="flex items-center gap-2 p-4 rounded-xl bg-red-500/10 border border-red-500/20 text-red-400 text-sm">
           <AlertCircle className="h-4 w-4 shrink-0" />
           {errors.submit}
         </div>
       )}
 
       {/* Two-column Layout */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-        {/* ─── Left Column: Basic Info + Price ──────────────────────────── */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
+        {/* ─── Left Column: Basic Info + Price + Tags ────────────────── */}
 
-        <div className="space-y-4">
-          {/* Basic Info Section */}
-          <SectionCard sectionKey="basic" title="Basic Info" icon={TrendingUp}>
+        <div className="space-y-5">
+          {/* Trade Information Section */}
+          <SectionCard sectionKey="basic" title="Trade Information" icon={BarChart3}>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               {/* Symbol */}
-              <div className="space-y-1.5">
-                <Label htmlFor="symbol">
-                  Symbol <span className="text-destructive">*</span>
+              <div className="space-y-1.5 sm:col-span-2">
+                <Label htmlFor="symbol" className="text-sm text-muted-foreground">
+                  Symbol <span className="text-red-400">*</span>
                 </Label>
                 <Input
                   id="symbol"
-                  placeholder="e.g. AAPL"
+                  placeholder="e.g., RELIANCE, NIFTY 50, BANKNIFTY"
                   value={symbol}
-                  onChange={(e) => setSymbol(e.target.value.toUpperCase())}
-                  className={cn(errors.symbol && 'border-destructive')}
+                  onChange={(e) => setSymbol(e.target.value)}
+                  className={cn(
+                    'bg-white/[0.03] border-white/[0.08] rounded-lg focus:border-primary',
+                    errors.symbol && 'border-red-500'
+                  )}
                   autoFocus
                 />
                 {errors.symbol && (
-                  <p className="text-xs text-destructive">{errors.symbol}</p>
+                  <p className="text-xs text-red-400">{errors.symbol}</p>
                 )}
               </div>
 
               {/* Market Type */}
-              <div className="space-y-1.5">
-                <Label>Market Type</Label>
-                <Select value={marketType} onValueChange={(v) => setMarketType(v as MarketType)}>
-                  <SelectTrigger className="w-full">
-                    <SelectValue placeholder="Select market" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {MARKET_TYPES.map((m) => (
-                      <SelectItem key={m.value} value={m.value}>
-                        {m.label}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+              <div className="space-y-1.5 sm:col-span-2">
+                <Label className="text-sm text-muted-foreground">Market Type</Label>
+                <div className="grid grid-cols-2 sm:grid-cols-5 gap-2">
+                  {MARKET_TYPE_OPTIONS.map((mt) => (
+                    <button
+                      key={mt.value}
+                      type="button"
+                      onClick={() => setMarketType(mt.value)}
+                      className={cn(
+                        'flex flex-col items-center gap-0.5 p-3 rounded-xl border transition-all text-center',
+                        marketType === mt.value
+                          ? 'bg-primary/10 border-primary text-primary'
+                          : 'bg-white/[0.03] border-white/[0.08] text-muted-foreground hover:bg-white/[0.05] hover:border-white/[0.12]'
+                      )}
+                    >
+                      <span className="text-xs font-medium">{mt.label}</span>
+                      <span className="text-[10px] opacity-60">{mt.sublabel}</span>
+                    </button>
+                  ))}
+                </div>
               </div>
 
               {/* Direction */}
               <div className="space-y-1.5 sm:col-span-2">
-                <Label>Direction</Label>
-                <RadioGroup
-                  value={direction}
-                  onValueChange={(v) => setDirection(v as Direction)}
-                  className="flex gap-2"
-                >
-                  <div
-                    className={cn(
-                      'flex items-center gap-2 rounded-md border px-4 py-2 cursor-pointer transition-colors',
-                      direction === 'long'
-                        ? 'border-emerald-500 bg-emerald-500/10 text-emerald-700 dark:text-emerald-400'
-                        : 'border-border hover:bg-accent/50'
-                    )}
+                <Label className="text-sm text-muted-foreground">Direction</Label>
+                <div className="flex gap-3">
+                  <button
+                    type="button"
                     onClick={() => setDirection('long')}
-                  >
-                    <RadioGroupItem value="long" id="direction-long" />
-                    <Label htmlFor="direction-long" className="cursor-pointer flex items-center gap-1.5">
-                      <TrendingUp className="h-4 w-4" />
-                      Long
-                    </Label>
-                  </div>
-                  <div
                     className={cn(
-                      'flex items-center gap-2 rounded-md border px-4 py-2 cursor-pointer transition-colors',
-                      direction === 'short'
-                        ? 'border-red-500 bg-red-500/10 text-red-700 dark:text-red-400'
-                        : 'border-border hover:bg-accent/50'
+                      'flex-1 flex items-center justify-center gap-2 p-3 rounded-xl border transition-all font-medium text-sm',
+                      direction === 'long'
+                        ? 'bg-emerald-500/15 border-emerald-500/50 text-emerald-400'
+                        : 'bg-white/[0.03] border-white/[0.08] text-muted-foreground hover:bg-white/[0.05]'
                     )}
-                    onClick={() => setDirection('short')}
                   >
-                    <RadioGroupItem value="short" id="direction-short" />
-                    <Label htmlFor="direction-short" className="cursor-pointer flex items-center gap-1.5">
-                      <TrendingDown className="h-4 w-4" />
-                      Short
-                    </Label>
-                  </div>
-                </RadioGroup>
+                    <ArrowUpRight className="h-4 w-4" />
+                    LONG
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setDirection('short')}
+                    className={cn(
+                      'flex-1 flex items-center justify-center gap-2 p-3 rounded-xl border transition-all font-medium text-sm',
+                      direction === 'short'
+                        ? 'bg-red-500/15 border-red-500/50 text-red-400'
+                        : 'bg-white/[0.03] border-white/[0.08] text-muted-foreground hover:bg-white/[0.05]'
+                    )}
+                  >
+                    <ArrowDownRight className="h-4 w-4" />
+                    SHORT
+                  </button>
+                </div>
               </div>
 
               {/* Trade Date */}
               <div className="space-y-1.5">
-                <Label htmlFor="tradeDate">
-                  Trade Date <span className="text-destructive">*</span>
+                <Label htmlFor="tradeDate" className="text-sm text-muted-foreground">
+                  Trade Date <span className="text-red-400">*</span>
                 </Label>
                 <Input
                   id="tradeDate"
                   type="date"
                   value={tradeDate}
                   onChange={(e) => setTradeDate(e.target.value)}
-                  className={cn(errors.tradeDate && 'border-destructive')}
+                  className={cn(
+                    'bg-white/[0.03] border-white/[0.08] rounded-lg focus:border-primary',
+                    errors.tradeDate && 'border-red-500'
+                  )}
                 />
                 {errors.tradeDate && (
-                  <p className="text-xs text-destructive">{errors.tradeDate}</p>
+                  <p className="text-xs text-red-400">{errors.tradeDate}</p>
                 )}
-              </div>
-
-              {/* Entry Time */}
-              <div className="space-y-1.5">
-                <Label htmlFor="entryTime">Entry Time</Label>
-                <Input
-                  id="entryTime"
-                  type="time"
-                  value={entryTime}
-                  onChange={(e) => setEntryTime(e.target.value)}
-                />
-              </div>
-
-              {/* Exit Time */}
-              <div className="space-y-1.5">
-                <Label htmlFor="exitTime">Exit Time</Label>
-                <Input
-                  id="exitTime"
-                  type="time"
-                  value={exitTime}
-                  onChange={(e) => setExitTime(e.target.value)}
-                />
               </div>
 
               {/* Status */}
               <div className="space-y-1.5">
-                <Label>Status</Label>
-                <Select value={status} onValueChange={(v) => setStatus(v as TradeStatus)}>
-                  <SelectTrigger className="w-full">
+                <Label className="text-sm text-muted-foreground">Status</Label>
+                <Select
+                  value={status}
+                  onValueChange={(v) => setStatus(v as TradeStatus)}
+                >
+                  <SelectTrigger className="bg-white/[0.03] border-white/[0.08] rounded-lg">
                     <SelectValue placeholder="Select status" />
                   </SelectTrigger>
-                  <SelectContent>
+                  <SelectContent className="bg-[#161618] border-white/[0.06]">
                     {STATUS_OPTIONS.map((s) => (
                       <SelectItem key={s.value} value={s.value}>
                         <span className="flex items-center gap-2">
                           <span
                             className={cn(
                               'inline-block w-2 h-2 rounded-full',
-                              s.value === 'open' && 'bg-emerald-500',
-                              s.value === 'closed' && 'bg-muted-foreground',
-                              s.value === 'draft' && 'bg-amber-500'
+                              s.color
                             )}
                           />
                           {s.label}
@@ -956,6 +1018,34 @@ export default function TradeFormPage({ tradeId }: { tradeId?: string }) {
                   </SelectContent>
                 </Select>
               </div>
+
+              {/* Entry Time */}
+              <div className="space-y-1.5">
+                <Label htmlFor="entryTime" className="text-sm text-muted-foreground">
+                  Entry Time
+                </Label>
+                <Input
+                  id="entryTime"
+                  type="time"
+                  value={entryTime}
+                  onChange={(e) => setEntryTime(e.target.value)}
+                  className="bg-white/[0.03] border-white/[0.08] rounded-lg"
+                />
+              </div>
+
+              {/* Exit Time */}
+              <div className="space-y-1.5">
+                <Label htmlFor="exitTime" className="text-sm text-muted-foreground">
+                  Exit Time
+                </Label>
+                <Input
+                  id="exitTime"
+                  type="time"
+                  value={exitTime}
+                  onChange={(e) => setExitTime(e.target.value)}
+                  className="bg-white/[0.03] border-white/[0.08] rounded-lg"
+                />
+              </div>
             </div>
           </SectionCard>
 
@@ -964,8 +1054,8 @@ export default function TradeFormPage({ tradeId }: { tradeId?: string }) {
             <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
               {/* Entry Price */}
               <div className="space-y-1.5">
-                <Label htmlFor="entryPrice">
-                  Entry Price <span className="text-destructive">*</span>
+                <Label htmlFor="entryPrice" className="text-sm text-muted-foreground">
+                  Entry Price (₹) <span className="text-red-400">*</span>
                 </Label>
                 <Input
                   id="entryPrice"
@@ -975,16 +1065,21 @@ export default function TradeFormPage({ tradeId }: { tradeId?: string }) {
                   placeholder="0.00"
                   value={entryPrice}
                   onChange={(e) => setEntryPrice(e.target.value)}
-                  className={cn(errors.entryPrice && 'border-destructive')}
+                  className={cn(
+                    'bg-white/[0.03] border-white/[0.08] rounded-lg focus:border-primary',
+                    errors.entryPrice && 'border-red-500'
+                  )}
                 />
                 {errors.entryPrice && (
-                  <p className="text-xs text-destructive">{errors.entryPrice}</p>
+                  <p className="text-xs text-red-400">{errors.entryPrice}</p>
                 )}
               </div>
 
               {/* Exit Price */}
               <div className="space-y-1.5">
-                <Label htmlFor="exitPrice">Exit Price</Label>
+                <Label htmlFor="exitPrice" className="text-sm text-muted-foreground">
+                  Exit Price (₹)
+                </Label>
                 <Input
                   id="exitPrice"
                   type="number"
@@ -993,13 +1088,14 @@ export default function TradeFormPage({ tradeId }: { tradeId?: string }) {
                   placeholder="0.00"
                   value={exitPrice}
                   onChange={(e) => setExitPrice(e.target.value)}
+                  className="bg-white/[0.03] border-white/[0.08] rounded-lg"
                 />
               </div>
 
               {/* Quantity */}
               <div className="space-y-1.5">
-                <Label htmlFor="quantity">
-                  Quantity <span className="text-destructive">*</span>
+                <Label htmlFor="quantity" className="text-sm text-muted-foreground">
+                  Quantity <span className="text-red-400">*</span>
                 </Label>
                 <Input
                   id="quantity"
@@ -1009,16 +1105,21 @@ export default function TradeFormPage({ tradeId }: { tradeId?: string }) {
                   placeholder="1"
                   value={quantity}
                   onChange={(e) => setQuantity(e.target.value)}
-                  className={cn(errors.quantity && 'border-destructive')}
+                  className={cn(
+                    'bg-white/[0.03] border-white/[0.08] rounded-lg focus:border-primary',
+                    errors.quantity && 'border-red-500'
+                  )}
                 />
                 {errors.quantity && (
-                  <p className="text-xs text-destructive">{errors.quantity}</p>
+                  <p className="text-xs text-red-400">{errors.quantity}</p>
                 )}
               </div>
 
               {/* Stop Loss */}
               <div className="space-y-1.5">
-                <Label htmlFor="stopLoss">Stop Loss</Label>
+                <Label htmlFor="stopLoss" className="text-sm text-muted-foreground">
+                  Stop Loss (₹)
+                </Label>
                 <Input
                   id="stopLoss"
                   type="number"
@@ -1027,12 +1128,15 @@ export default function TradeFormPage({ tradeId }: { tradeId?: string }) {
                   placeholder="0.00"
                   value={stopLoss}
                   onChange={(e) => setStopLoss(e.target.value)}
+                  className="bg-white/[0.03] border-white/[0.08] rounded-lg"
                 />
               </div>
 
               {/* Target Price */}
               <div className="space-y-1.5">
-                <Label htmlFor="targetPrice">Target Price</Label>
+                <Label htmlFor="targetPrice" className="text-sm text-muted-foreground">
+                  Target (₹)
+                </Label>
                 <Input
                   id="targetPrice"
                   type="number"
@@ -1041,12 +1145,15 @@ export default function TradeFormPage({ tradeId }: { tradeId?: string }) {
                   placeholder="0.00"
                   value={targetPrice}
                   onChange={(e) => setTargetPrice(e.target.value)}
+                  className="bg-white/[0.03] border-white/[0.08] rounded-lg"
                 />
               </div>
 
               {/* Fees */}
               <div className="space-y-1.5">
-                <Label htmlFor="fees">Fees</Label>
+                <Label htmlFor="fees" className="text-sm text-muted-foreground">
+                  Fees (₹)
+                </Label>
                 <Input
                   id="fees"
                   type="number"
@@ -1055,6 +1162,7 @@ export default function TradeFormPage({ tradeId }: { tradeId?: string }) {
                   placeholder="0.00"
                   value={fees}
                   onChange={(e) => setFees(e.target.value)}
+                  className="bg-white/[0.03] border-white/[0.08] rounded-lg"
                 />
               </div>
             </div>
@@ -1062,8 +1170,8 @@ export default function TradeFormPage({ tradeId }: { tradeId?: string }) {
             {/* Auto-calculated P/L */}
             {exitPrice && parseFloat(exitPrice) > 0 && (
               <>
-                <Separator className="my-2" />
-                <div className="grid grid-cols-3 gap-4 p-3 rounded-lg bg-muted/50">
+                <Separator className="bg-white/[0.06] my-2" />
+                <div className="grid grid-cols-3 gap-4 p-4 rounded-xl bg-white/[0.03] border border-white/[0.06]">
                   <div className="text-center">
                     <p className="text-xs text-muted-foreground mb-1">P/L</p>
                     <p className="text-sm font-bold">
@@ -1075,8 +1183,8 @@ export default function TradeFormPage({ tradeId }: { tradeId?: string }) {
                     <p
                       className={cn(
                         'text-sm font-bold',
-                        pnlPercent > 0 && 'text-emerald-600 dark:text-emerald-400',
-                        pnlPercent < 0 && 'text-red-600 dark:text-red-400',
+                        pnlPercent > 0 && 'text-emerald-400',
+                        pnlPercent < 0 && 'text-red-400',
                         pnlPercent === 0 && 'text-muted-foreground'
                       )}
                     >
@@ -1085,12 +1193,14 @@ export default function TradeFormPage({ tradeId }: { tradeId?: string }) {
                     </p>
                   </div>
                   <div className="text-center">
-                    <p className="text-xs text-muted-foreground mb-1">R-Multiple</p>
+                    <p className="text-xs text-muted-foreground mb-1">
+                      R-Multiple
+                    </p>
                     <p
                       className={cn(
                         'text-sm font-bold',
-                        rMultiple != null && rMultiple > 0 && 'text-emerald-600 dark:text-emerald-400',
-                        rMultiple != null && rMultiple < 0 && 'text-red-600 dark:text-red-400',
+                        rMultiple != null && rMultiple > 0 && 'text-emerald-400',
+                        rMultiple != null && rMultiple < 0 && 'text-red-400',
                         (rMultiple == null || rMultiple === 0) && 'text-muted-foreground'
                       )}
                     >
@@ -1102,7 +1212,7 @@ export default function TradeFormPage({ tradeId }: { tradeId?: string }) {
             )}
           </SectionCard>
 
-          {/* Tags */}
+          {/* Tags Section */}
           <SectionCard sectionKey="tags" title="Tags" icon={Tag}>
             <div className="space-y-3">
               {/* Selected Tags */}
@@ -1114,8 +1224,7 @@ export default function TradeFormPage({ tradeId }: { tradeId?: string }) {
                     return (
                       <Badge
                         key={tag.id}
-                        variant="secondary"
-                        className="cursor-pointer hover:bg-destructive/10 hover:text-destructive transition-colors"
+                        className="cursor-pointer bg-primary/15 text-primary border-primary/30 hover:bg-red-500/15 hover:text-red-400 hover:border-red-500/30 transition-colors"
                         onClick={() => toggleTag(tag.id)}
                       >
                         {tag.name}
@@ -1124,7 +1233,9 @@ export default function TradeFormPage({ tradeId }: { tradeId?: string }) {
                     );
                   })
                 ) : (
-                  <p className="text-xs text-muted-foreground">No tags selected</p>
+                  <p className="text-xs text-muted-foreground">
+                    No tags selected — click available tags below to add
+                  </p>
                 )}
               </div>
 
@@ -1137,7 +1248,7 @@ export default function TradeFormPage({ tradeId }: { tradeId?: string }) {
                       <Badge
                         key={tag.id}
                         variant="outline"
-                        className="cursor-pointer hover:bg-accent transition-colors"
+                        className="cursor-pointer bg-white/[0.03] border-white/[0.08] hover:bg-white/[0.06] transition-colors"
                         onClick={() => toggleTag(tag.id)}
                       >
                         + {tag.name}
@@ -1158,14 +1269,14 @@ export default function TradeFormPage({ tradeId }: { tradeId?: string }) {
                       handleCreateTag();
                     }
                   }}
-                  className="flex-1 h-8 text-sm"
+                  className="flex-1 h-9 text-sm bg-white/[0.03] border-white/[0.08] rounded-lg"
                 />
                 <Button
                   variant="outline"
                   size="sm"
                   onClick={handleCreateTag}
                   disabled={!newTagName.trim() || creatingTag}
-                  className="h-8"
+                  className="h-9 bg-white/[0.05] border-white/[0.08] rounded-lg hover:bg-white/[0.08]"
                 >
                   {creatingTag ? (
                     <Loader2 className="h-3 w-3 animate-spin" />
@@ -1181,18 +1292,18 @@ export default function TradeFormPage({ tradeId }: { tradeId?: string }) {
 
         {/* ─── Right Column: Details + Psychology + Screenshots ────────── */}
 
-        <div className="space-y-4">
+        <div className="space-y-5">
           {/* Trade Details Section */}
-          <SectionCard sectionKey="details" title="Trade Details" icon={Calculator}>
+          <SectionCard sectionKey="details" title="Trade Details" icon={FileText}>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               {/* Strategy */}
               <div className="space-y-1.5">
-                <Label>Strategy</Label>
+                <Label className="text-sm text-muted-foreground">Strategy</Label>
                 <Select value={strategy} onValueChange={setStrategy}>
-                  <SelectTrigger className="w-full">
+                  <SelectTrigger className="bg-white/[0.03] border-white/[0.08] rounded-lg">
                     <SelectValue placeholder="Select strategy" />
                   </SelectTrigger>
-                  <SelectContent>
+                  <SelectContent className="bg-[#161618] border-white/[0.06]">
                     {STRATEGY_PRESETS.map((s) => (
                       <SelectItem key={s} value={s}>
                         {s}
@@ -1204,12 +1315,12 @@ export default function TradeFormPage({ tradeId }: { tradeId?: string }) {
 
               {/* Timeframe */}
               <div className="space-y-1.5">
-                <Label>Timeframe</Label>
+                <Label className="text-sm text-muted-foreground">Timeframe</Label>
                 <Select value={timeframe} onValueChange={setTimeframe}>
-                  <SelectTrigger className="w-full">
+                  <SelectTrigger className="bg-white/[0.03] border-white/[0.08] rounded-lg">
                     <SelectValue placeholder="Select timeframe" />
                   </SelectTrigger>
-                  <SelectContent>
+                  <SelectContent className="bg-[#161618] border-white/[0.06]">
                     {TIMEFRAME_OPTIONS.map((t) => (
                       <SelectItem key={t.value} value={t.value}>
                         {t.label}
@@ -1221,23 +1332,26 @@ export default function TradeFormPage({ tradeId }: { tradeId?: string }) {
 
               {/* Account Name */}
               <div className="space-y-1.5">
-                <Label htmlFor="accountName">Account Name</Label>
+                <Label htmlFor="accountName" className="text-sm text-muted-foreground">
+                  Account Name
+                </Label>
                 <Input
                   id="accountName"
                   placeholder="e.g. Main Account"
                   value={accountName}
                   onChange={(e) => setAccountName(e.target.value)}
+                  className="bg-white/[0.03] border-white/[0.08] rounded-lg"
                 />
               </div>
 
               {/* Broker */}
               <div className="space-y-1.5">
-                <Label>Broker</Label>
+                <Label className="text-sm text-muted-foreground">Broker</Label>
                 <Select value={broker} onValueChange={setBroker}>
-                  <SelectTrigger className="w-full">
+                  <SelectTrigger className="bg-white/[0.03] border-white/[0.08] rounded-lg">
                     <SelectValue placeholder="Select broker" />
                   </SelectTrigger>
-                  <SelectContent>
+                  <SelectContent className="bg-[#161618] border-white/[0.06]">
                     {BROKER_PRESETS.map((b) => (
                       <SelectItem key={b} value={b}>
                         {b}
@@ -1248,7 +1362,7 @@ export default function TradeFormPage({ tradeId }: { tradeId?: string }) {
               </div>
             </div>
 
-            <Separator className="my-2" />
+            <Separator className="bg-white/[0.06] my-2" />
 
             {/* Ratings */}
             <div className="space-y-4">
@@ -1266,19 +1380,21 @@ export default function TradeFormPage({ tradeId }: { tradeId?: string }) {
           </SectionCard>
 
           {/* Psychology & Notes Section */}
-          <SectionCard sectionKey="psychology" title="Psychology & Notes" icon={AlertCircle}>
+          <SectionCard sectionKey="psychology" title="Psychology & Notes" icon={Brain}>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               {/* Emotional State Before */}
               <div className="space-y-1.5">
-                <Label>Emotional State Before</Label>
+                <Label className="text-sm text-muted-foreground">
+                  Emotional State Before
+                </Label>
                 <Select
                   value={emotionalStateBefore}
                   onValueChange={(v) => setEmotionalStateBefore(v as EmotionalState)}
                 >
-                  <SelectTrigger className="w-full">
+                  <SelectTrigger className="bg-white/[0.03] border-white/[0.08] rounded-lg">
                     <SelectValue placeholder="Select state" />
                   </SelectTrigger>
-                  <SelectContent>
+                  <SelectContent className="bg-[#161618] border-white/[0.06]">
                     {EMOTIONAL_STATES.map((s) => (
                       <SelectItem key={s} value={s}>
                         {s.charAt(0).toUpperCase() + s.slice(1)}
@@ -1290,15 +1406,17 @@ export default function TradeFormPage({ tradeId }: { tradeId?: string }) {
 
               {/* Emotional State After */}
               <div className="space-y-1.5">
-                <Label>Emotional State After</Label>
+                <Label className="text-sm text-muted-foreground">
+                  Emotional State After
+                </Label>
                 <Select
                   value={emotionalStateAfter}
                   onValueChange={(v) => setEmotionalStateAfter(v as EmotionalState)}
                 >
-                  <SelectTrigger className="w-full">
+                  <SelectTrigger className="bg-white/[0.03] border-white/[0.08] rounded-lg">
                     <SelectValue placeholder="Select state" />
                   </SelectTrigger>
-                  <SelectContent>
+                  <SelectContent className="bg-[#161618] border-white/[0.06]">
                     {EMOTIONAL_STATES.map((s) => (
                       <SelectItem key={s} value={s}>
                         {s.charAt(0).toUpperCase() + s.slice(1)}
@@ -1309,44 +1427,50 @@ export default function TradeFormPage({ tradeId }: { tradeId?: string }) {
               </div>
             </div>
 
-            <Separator className="my-2" />
+            <Separator className="bg-white/[0.06] my-2" />
 
             {/* Notes */}
             <div className="space-y-1.5">
-              <Label htmlFor="notes">Notes</Label>
+              <Label htmlFor="notes" className="text-sm text-muted-foreground">
+                Notes
+              </Label>
               <Textarea
                 id="notes"
                 placeholder="General trade notes, observations..."
                 value={notes}
                 onChange={(e) => setNotes(e.target.value)}
                 rows={3}
-                className="resize-none"
+                className="resize-none bg-white/[0.03] border-white/[0.08] rounded-lg"
               />
             </div>
 
             {/* Mistakes */}
             <div className="space-y-1.5">
-              <Label htmlFor="mistakes">Mistakes</Label>
+              <Label htmlFor="mistakes" className="text-sm text-muted-foreground">
+                Mistakes
+              </Label>
               <Textarea
                 id="mistakes"
                 placeholder="What mistakes were made during this trade?"
                 value={mistakes}
                 onChange={(e) => setMistakes(e.target.value)}
                 rows={2}
-                className="resize-none"
+                className="resize-none bg-white/[0.03] border-white/[0.08] rounded-lg"
               />
             </div>
 
             {/* Lessons Learned */}
             <div className="space-y-1.5">
-              <Label htmlFor="lessonsLearned">Lessons Learned</Label>
+              <Label htmlFor="lessonsLearned" className="text-sm text-muted-foreground">
+                Lessons Learned
+              </Label>
               <Textarea
                 id="lessonsLearned"
                 placeholder="What can be improved for next time?"
                 value={lessonsLearned}
                 onChange={(e) => setLessonsLearned(e.target.value)}
                 rows={2}
-                className="resize-none"
+                className="resize-none bg-white/[0.03] border-white/[0.08] rounded-lg"
               />
             </div>
           </SectionCard>
@@ -1357,17 +1481,22 @@ export default function TradeFormPage({ tradeId }: { tradeId?: string }) {
               {/* Drop Zone */}
               <div
                 ref={dropZoneRef}
-                className="border-2 border-dashed border-muted-foreground/25 rounded-lg p-6 text-center transition-colors cursor-pointer hover:border-muted-foreground/50"
+                className={cn(
+                  'border-2 border-dashed rounded-xl p-8 text-center transition-all cursor-pointer',
+                  dragActive
+                    ? 'border-primary bg-primary/5'
+                    : 'border-white/[0.08] bg-white/[0.02] hover:border-white/[0.15] hover:bg-white/[0.04]'
+                )}
                 onDragOver={handleDragOver}
                 onDragLeave={handleDragLeave}
                 onDrop={handleDrop}
                 onClick={() => fileInputRef.current?.click()}
               >
-                <Upload className="h-8 w-8 mx-auto text-muted-foreground/50 mb-2" />
+                <Upload className="h-8 w-8 mx-auto text-muted-foreground/40 mb-3" />
                 <p className="text-sm text-muted-foreground">
-                  Drag and drop images here, or click to browse
+                  Drag & drop images here, or click to browse
                 </p>
-                <p className="text-xs text-muted-foreground/60 mt-1">
+                <p className="text-xs text-muted-foreground/50 mt-1">
                   PNG, JPG, GIF, WebP up to 10MB each
                 </p>
                 <input
@@ -1383,27 +1512,29 @@ export default function TradeFormPage({ tradeId }: { tradeId?: string }) {
               {/* Existing Screenshots (edit mode) */}
               {existingScreenshots.length > 0 && (
                 <div className="space-y-2">
-                  <p className="text-xs text-muted-foreground font-medium">Existing Screenshots</p>
-                  <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 max-h-64 overflow-y-auto">
+                  <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                    Existing Screenshots
+                  </p>
+                  <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 max-h-72 overflow-y-auto">
                     {existingScreenshots.map((screenshot) => (
                       <div
                         key={screenshot.id}
-                        className="relative group rounded-lg border overflow-hidden bg-muted"
+                        className="relative group rounded-xl border border-white/[0.06] overflow-hidden bg-white/[0.03]"
                       >
                         <img
                           src={screenshot.imageUrl}
                           alt={screenshot.label}
-                          className="w-full h-24 object-cover"
+                          className="w-full h-28 object-cover"
                         />
-                        <div className="absolute top-1 left-1">
-                          <Badge variant="secondary" className="text-[10px] px-1.5 py-0">
+                        <div className="absolute top-2 left-2">
+                          <Badge className="text-[10px] px-2 py-0.5 bg-black/60 text-white border-0 backdrop-blur-sm">
                             {screenshot.label}
                           </Badge>
                         </div>
                         <button
                           type="button"
                           onClick={() => removeExistingScreenshot(screenshot.id)}
-                          className="absolute top-1 right-1 w-5 h-5 rounded-full bg-black/60 text-white flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
+                          className="absolute top-2 right-2 w-6 h-6 rounded-full bg-red-500/80 text-white flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity hover:bg-red-500"
                         >
                           <X className="h-3 w-3" />
                         </button>
@@ -1416,25 +1547,27 @@ export default function TradeFormPage({ tradeId }: { tradeId?: string }) {
               {/* New Screenshots */}
               {newScreenshots.length > 0 && (
                 <div className="space-y-2">
-                  <p className="text-xs text-muted-foreground font-medium">New Screenshots ({newScreenshots.length})</p>
-                  <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 max-h-64 overflow-y-auto">
+                  <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                    New Screenshots ({newScreenshots.length})
+                  </p>
+                  <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 max-h-72 overflow-y-auto">
                     {newScreenshots.map((screenshot, index) => (
                       <div
                         key={screenshot.previewUrl}
-                        className="relative group rounded-lg border overflow-hidden bg-muted"
+                        className="relative group rounded-xl border border-white/[0.06] overflow-hidden bg-white/[0.03]"
                       >
                         <img
                           src={screenshot.previewUrl}
                           alt={`New screenshot ${index + 1}`}
-                          className="w-full h-24 object-cover"
+                          className="w-full h-28 object-cover"
                         />
-                        <div className="absolute top-1 left-1">
+                        <div className="absolute top-2 left-2">
                           <select
                             value={screenshot.label}
                             onChange={(e) =>
                               updateNewScreenshotLabel(index, e.target.value as ScreenshotLabel)
                             }
-                            className="text-[10px] rounded-md border bg-black/60 text-white px-1 py-0.5 cursor-pointer"
+                            className="text-[10px] rounded-lg border-0 bg-black/60 text-white px-2 py-0.5 cursor-pointer backdrop-blur-sm"
                           >
                             {SCREENSHOT_LABELS.map((l) => (
                               <option key={l.value} value={l.value}>
@@ -1446,11 +1579,11 @@ export default function TradeFormPage({ tradeId }: { tradeId?: string }) {
                         <button
                           type="button"
                           onClick={() => removeNewScreenshot(index)}
-                          className="absolute top-1 right-1 w-5 h-5 rounded-full bg-black/60 text-white flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
+                          className="absolute top-2 right-2 w-6 h-6 rounded-full bg-red-500/80 text-white flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity hover:bg-red-500"
                         >
                           <X className="h-3 w-3" />
                         </button>
-                        <div className="p-1.5">
+                        <div className="p-2 border-t border-white/[0.06]">
                           <p className="text-[10px] text-muted-foreground truncate">
                             {screenshot.file.name}
                           </p>
@@ -1465,22 +1598,33 @@ export default function TradeFormPage({ tradeId }: { tradeId?: string }) {
         </div>
       </div>
 
-      {/* Bottom Action Bar (mobile friendly) */}
-      <div className="sticky bottom-0 bg-background/95 backdrop-blur-sm border-t rounded-lg p-3 flex items-center justify-between gap-2 lg:hidden">
-        <Button variant="outline" size="sm" onClick={() => router.back()} disabled={saving}>
+      {/* Bottom Action Bar (mobile) */}
+      <div className="sticky bottom-0 bg-background/95 backdrop-blur-sm border-t border-white/[0.06] rounded-xl p-3 flex items-center justify-between gap-3 lg:hidden">
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={() => router.back()}
+          disabled={saving}
+          className="bg-white/[0.05] border-white/[0.08] rounded-xl hover:bg-white/[0.08]"
+        >
           Cancel
         </Button>
         <Button
           size="sm"
           onClick={handleSave}
           disabled={saving || uploadingScreenshots}
+          className="bg-primary hover:bg-primary/90 text-primary-foreground rounded-xl"
         >
           {saving ? (
             <Loader2 className="h-4 w-4 mr-1 animate-spin" />
           ) : (
             <Save className="h-4 w-4 mr-1" />
           )}
-          {saving ? 'Saving...' : uploadingScreenshots ? 'Uploading...' : 'Save Trade'}
+          {saving
+            ? 'Saving...'
+            : uploadingScreenshots
+              ? 'Uploading...'
+              : 'Save Trade'}
         </Button>
       </div>
     </div>

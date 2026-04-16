@@ -4,7 +4,6 @@ import React, { useEffect, useState, useCallback, useRef } from 'react';
 import { useRouter } from '@/lib/router';
 import { cn } from '@/lib/utils';
 import { CurrencyBadge, LoadingSpinner, ErrorState } from '@/components/common/loading';
-import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
@@ -37,16 +36,23 @@ import {
 } from '@/components/ui/pagination';
 import {
   Search,
-  ArrowUpRight,
-  ArrowDownRight,
+  TrendingUp,
+  TrendingDown,
   ChevronDown,
-  ChevronUp,
+  ChevronLeft,
+  ChevronRight,
   Plus,
   SlidersHorizontal,
   X,
   BookOpen,
   ArrowUpDown,
   Check,
+  IndianRupee,
+  Filter,
+  Flame,
+  Zap,
+  Layers,
+  CircleDot,
 } from 'lucide-react';
 import { format, parseISO, isValid, startOfDay, endOfDay, startOfWeek, endOfWeek, startOfMonth, endOfMonth, subMonths, subDays } from 'date-fns';
 
@@ -90,7 +96,31 @@ const SORT_OPTIONS = [
   { value: 'pnlPercent_asc', label: 'Return %: Low to High' },
 ] as const;
 
-const MARKET_TYPES = ['stocks', 'forex', 'crypto', 'futures', 'options'] as const;
+const INDIAN_MARKET_TYPES = [
+  { value: 'equity', label: 'Equity', icon: Layers },
+  { value: 'futures', label: 'Futures', icon: Flame },
+  { value: 'options', label: 'Options', icon: CircleDot },
+  { value: 'commodity', label: 'Commodity', icon: Zap },
+  { value: 'currency', label: 'Currency', icon: IndianRupee },
+] as const;
+
+const INDIAN_STRATEGIES = [
+  'Breakout',
+  'Reversal',
+  'Trend Following',
+  'Scalping',
+  'Swing Trading',
+  'Gap Up/Down',
+  'Mean Reversion',
+  'Options Selling',
+  'Iron Condor',
+  'Straddle/Strangle',
+  'Bull Call Spread',
+  'Bear Put Spread',
+  'Nifty Options',
+  'Bank Nifty Options',
+] as const;
+
 const DATE_PRESETS = [
   { label: 'All Time', value: 'all' },
   { label: 'Today', value: 'today' },
@@ -103,15 +133,17 @@ const DATE_PRESETS = [
 // --- Helper Components ---
 
 function StatusBadge({ status }: { status: string }) {
-  const variants: Record<string, string> = {
-    closed: 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400',
-    open: 'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400',
-    draft: 'bg-muted text-muted-foreground',
+  const config: Record<string, { bg: string; text: string; dot: string }> = {
+    closed: { bg: 'bg-emerald-500/10', text: 'text-emerald-400', dot: 'bg-emerald-400' },
+    open: { bg: 'bg-amber-500/10', text: 'text-amber-400', dot: 'bg-amber-400' },
+    draft: { bg: 'bg-white/[0.06]', text: 'text-zinc-400', dot: 'bg-zinc-400' },
   };
+  const c = config[status] || config.draft;
   return (
-    <Badge variant="outline" className={cn('capitalize text-xs font-medium', variants[status] || variants.draft)}>
-      {status}
-    </Badge>
+    <span className={cn('inline-flex items-center gap-1.5 text-[11px] font-semibold px-2 py-0.5 rounded-md', c.bg, c.text)}>
+      <span className={cn('w-1.5 h-1.5 rounded-full', c.dot)} />
+      {status.charAt(0).toUpperCase() + status.slice(1)}
+    </span>
   );
 }
 
@@ -120,13 +152,13 @@ function DirectionBadge({ direction }: { direction: string }) {
   return (
     <span
       className={cn(
-        'inline-flex items-center gap-1 text-xs font-semibold px-2 py-0.5 rounded',
+        'inline-flex items-center gap-1 text-xs font-bold px-2 py-0.5 rounded-md',
         isLong
-          ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400'
-          : 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400'
+          ? 'bg-emerald-500/15 text-emerald-400'
+          : 'bg-red-500/15 text-red-400'
       )}
     >
-      {isLong ? <ArrowUpRight className="w-3 h-3" /> : <ArrowDownRight className="w-3 h-3" />}
+      {isLong ? <TrendingUp className="w-3 h-3" /> : <TrendingDown className="w-3 h-3" />}
       {direction.toUpperCase()}
     </span>
   );
@@ -134,9 +166,9 @@ function DirectionBadge({ direction }: { direction: string }) {
 
 function FilterBadge({ label, onClear }: { label: string; onClear: () => void }) {
   return (
-    <span className="inline-flex items-center gap-1 px-2 py-1 rounded-md bg-primary/10 text-primary text-xs font-medium">
+    <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-white/[0.06] border border-white/[0.06] text-zinc-300 text-xs font-medium hover:bg-white/[0.1] transition-colors">
       {label}
-      <button onClick={onClear} className="hover:text-primary/80">
+      <button onClick={onClear} className="text-zinc-500 hover:text-zinc-300 transition-colors">
         <X className="w-3 h-3" />
       </button>
     </span>
@@ -358,60 +390,73 @@ export default function JournalListPage() {
   const noMatchingFilters = pagination.total === 0 && hasActiveFilters;
 
   return (
-    <div className="p-4 md:p-6 max-w-7xl mx-auto w-full space-y-4">
+    <div className="p-4 md:p-6 lg:p-8 max-w-7xl mx-auto w-full space-y-6">
+
       {/* === Page Header === */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold tracking-tight flex items-center gap-2">
-            <BookOpen className="w-6 h-6" />
+          <h1 className="text-2xl font-bold text-white tracking-tight flex items-center gap-2.5">
+            <div className="w-9 h-9 rounded-xl bg-[#8B5CF6]/15 flex items-center justify-center">
+              <BookOpen className="w-5 h-5 text-[#8B5CF6]" />
+            </div>
             Trade Journal
           </h1>
-          <p className="text-sm text-muted-foreground mt-0.5">
+          <p className="text-sm text-zinc-500 mt-1 ml-11">
             {pagination.total} trade{pagination.total !== 1 ? 's' : ''} found
           </p>
         </div>
-        <Button onClick={() => navigate('trades/new')} className="shrink-0">
-          <Plus className="w-4 h-4 mr-1" />
+        <Button
+          onClick={() => navigate('trades/new')}
+          className="bg-[#8B5CF6] hover:bg-[#7C3AED] text-white gap-2 shrink-0"
+        >
+          <Plus className="w-4 h-4" />
           Add Trade
         </Button>
       </div>
 
       {/* === Search & Filter Bar === */}
-      <div className="flex flex-col sm:flex-row gap-2">
+      <div className="flex flex-col sm:flex-row gap-3">
+        {/* Search Input */}
         <div className="relative flex-1">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+          <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-500" />
           <Input
-            placeholder="Search trades by symbol, notes, strategy..."
-            className="pl-9"
+            placeholder="Search by symbol, notes, strategy..."
+            className="pl-10 h-11 rounded-xl bg-white/[0.03] border-white/[0.06] text-zinc-200 placeholder:text-zinc-600 focus:border-[#8B5CF6]/50 focus:ring-[#8B5CF6]/20"
             value={search}
             onChange={(e) => handleSearchChange(e.target.value)}
           />
         </div>
+
         <div className="flex items-center gap-2">
+          {/* Filter Popover */}
           <Popover open={showFilters} onOpenChange={setShowFilters}>
             <PopoverTrigger asChild>
-              <Button variant="outline" size="default" className="shrink-0 gap-2">
+              <Button
+                variant="secondary"
+                size="default"
+                className="shrink-0 gap-2 h-11 rounded-xl bg-white/[0.03] border border-white/[0.06] text-zinc-300 hover:bg-white/[0.06] hover:text-zinc-200"
+              >
                 <SlidersHorizontal className="w-4 h-4" />
                 Filters
                 {activeFilterCount > 0 && (
-                  <span className="ml-1 flex h-5 w-5 items-center justify-center rounded-full bg-primary text-[10px] text-primary-foreground font-bold">
+                  <span className="ml-0.5 flex h-5 w-5 items-center justify-center rounded-full bg-[#8B5CF6] text-[10px] text-white font-bold">
                     {activeFilterCount}
                   </span>
                 )}
               </Button>
             </PopoverTrigger>
-            <PopoverContent className="w-80 p-4 space-y-4" align="end">
+            <PopoverContent className="w-[320px] p-4 space-y-4 bg-[#161618] border-white/[0.06] rounded-xl" align="end">
               <div className="space-y-4">
                 {/* Date Range */}
                 <div className="space-y-2">
-                  <label className="text-xs font-medium text-muted-foreground">Date Range</label>
+                  <label className="text-[11px] font-semibold text-zinc-500 uppercase tracking-wider">Date Range</label>
                   <Select value={datePreset} onValueChange={handleDatePreset}>
-                    <SelectTrigger className="w-full">
+                    <SelectTrigger className="w-full h-9 bg-white/[0.03] border-white/[0.06] text-zinc-300 rounded-lg">
                       <SelectValue placeholder="Select range" />
                     </SelectTrigger>
-                    <SelectContent>
+                    <SelectContent className="bg-[#161618] border-white/[0.06]">
                       {DATE_PRESETS.map(p => (
-                        <SelectItem key={p.value} value={p.value}>{p.label}</SelectItem>
+                        <SelectItem key={p.value} value={p.value} className="text-zinc-300 focus:bg-white/[0.06] focus:text-white">{p.label}</SelectItem>
                       ))}
                     </SelectContent>
                   </Select>
@@ -420,12 +465,14 @@ export default function JournalListPage() {
                       <Input
                         type="date"
                         placeholder="From"
+                        className="h-9 bg-white/[0.03] border-white/[0.06] text-zinc-300 rounded-lg text-xs"
                         value={dateFrom}
                         onChange={(e) => { setDateFrom(e.target.value); setDatePreset('custom'); setPage(1); }}
                       />
                       <Input
                         type="date"
                         placeholder="To"
+                        className="h-9 bg-white/[0.03] border-white/[0.06] text-zinc-300 rounded-lg text-xs"
                         value={dateTo}
                         onChange={(e) => { setDateTo(e.target.value); setDatePreset('custom'); setPage(1); }}
                       />
@@ -433,101 +480,131 @@ export default function JournalListPage() {
                   )}
                 </div>
 
-                {/* Symbol */}
+                {/* Market Type */}
                 <div className="space-y-2">
-                  <label className="text-xs font-medium text-muted-foreground">Symbol</label>
-                  <Input
-                    placeholder="e.g. AAPL"
-                    value={symbol}
-                    onChange={(e) => { setSymbol(e.target.value); setPage(1); }}
-                  />
+                  <label className="text-[11px] font-semibold text-zinc-500 uppercase tracking-wider">Market Type</label>
+                  <div className="grid grid-cols-2 gap-1.5">
+                    <button
+                      className={cn(
+                        'flex items-center gap-1.5 px-2.5 py-2 rounded-lg text-xs font-medium transition-colors border',
+                        marketType === 'all'
+                          ? 'bg-[#8B5CF6]/15 text-[#8B5CF6] border-[#8B5CF6]/20'
+                          : 'bg-white/[0.03] text-zinc-400 border-white/[0.06] hover:bg-white/[0.06]'
+                      )}
+                      onClick={() => { setMarketType('all'); setPage(1); }}
+                    >
+                      <Filter className="w-3 h-3" />
+                      All
+                    </button>
+                    {INDIAN_MARKET_TYPES.map(m => (
+                      <button
+                        key={m.value}
+                        className={cn(
+                          'flex items-center gap-1.5 px-2.5 py-2 rounded-lg text-xs font-medium transition-colors border',
+                          marketType === m.value
+                            ? 'bg-[#8B5CF6]/15 text-[#8B5CF6] border-[#8B5CF6]/20'
+                            : 'bg-white/[0.03] text-zinc-400 border-white/[0.06] hover:bg-white/[0.06]'
+                        )}
+                        onClick={() => { setMarketType(m.value); setPage(1); }}
+                      >
+                        <m.icon className="w-3 h-3" />
+                        {m.label}
+                      </button>
+                    ))}
+                  </div>
                 </div>
 
                 {/* Strategy */}
                 <div className="space-y-2">
-                  <label className="text-xs font-medium text-muted-foreground">Strategy</label>
-                  <Input
-                    placeholder="e.g. Breakout"
-                    value={strategy}
-                    onChange={(e) => { setStrategy(e.target.value); setPage(1); }}
-                  />
-                </div>
-
-                {/* Market Type */}
-                <div className="space-y-2">
-                  <label className="text-xs font-medium text-muted-foreground">Market Type</label>
-                  <Select value={marketType} onValueChange={(v) => { setMarketType(v); setPage(1); }}>
-                    <SelectTrigger className="w-full">
-                      <SelectValue />
+                  <label className="text-[11px] font-semibold text-zinc-500 uppercase tracking-wider">Strategy</label>
+                  <Select value={strategy} onValueChange={(v) => { setStrategy(v); setPage(1); }}>
+                    <SelectTrigger className="w-full h-9 bg-white/[0.03] border-white/[0.06] text-zinc-300 rounded-lg">
+                      <SelectValue placeholder="All Strategies" />
                     </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="all">All Markets</SelectItem>
-                      {MARKET_TYPES.map(m => (
-                        <SelectItem key={m} value={m}>{m.charAt(0).toUpperCase() + m.slice(1)}</SelectItem>
+                    <SelectContent className="bg-[#161618] border-white/[0.06] max-h-60">
+                      <SelectItem value="" className="text-zinc-300 focus:bg-white/[0.06] focus:text-white">All Strategies</SelectItem>
+                      {INDIAN_STRATEGIES.map(s => (
+                        <SelectItem key={s} value={s} className="text-zinc-300 focus:bg-white/[0.06] focus:text-white">{s}</SelectItem>
                       ))}
                     </SelectContent>
                   </Select>
                 </div>
 
-                {/* Direction */}
+                {/* Symbol */}
                 <div className="space-y-2">
-                  <label className="text-xs font-medium text-muted-foreground">Direction</label>
-                  <Select value={direction} onValueChange={(v) => { setDirection(v); setPage(1); }}>
-                    <SelectTrigger className="w-full">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="all">All</SelectItem>
-                      <SelectItem value="long">Long</SelectItem>
-                      <SelectItem value="short">Short</SelectItem>
-                    </SelectContent>
-                  </Select>
+                  <label className="text-[11px] font-semibold text-zinc-500 uppercase tracking-wider">Symbol</label>
+                  <Input
+                    placeholder="e.g. RELIANCE, NIFTY"
+                    className="h-9 bg-white/[0.03] border-white/[0.06] text-zinc-300 placeholder:text-zinc-600 rounded-lg"
+                    value={symbol}
+                    onChange={(e) => { setSymbol(e.target.value); setPage(1); }}
+                  />
                 </div>
 
-                {/* Profitable */}
-                <div className="space-y-2">
-                  <label className="text-xs font-medium text-muted-foreground">Result</label>
-                  <Select value={profitable} onValueChange={(v) => { setProfitable(v); setPage(1); }}>
-                    <SelectTrigger className="w-full">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="all">All</SelectItem>
-                      <SelectItem value="true">Winners</SelectItem>
-                      <SelectItem value="false">Losers</SelectItem>
-                    </SelectContent>
-                  </Select>
+                {/* Direction + Result row */}
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="space-y-2">
+                    <label className="text-[11px] font-semibold text-zinc-500 uppercase tracking-wider">Direction</label>
+                    <Select value={direction} onValueChange={(v) => { setDirection(v); setPage(1); }}>
+                      <SelectTrigger className="w-full h-9 bg-white/[0.03] border-white/[0.06] text-zinc-300 rounded-lg">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent className="bg-[#161618] border-white/[0.06]">
+                        <SelectItem value="all" className="text-zinc-300 focus:bg-white/[0.06] focus:text-white">All</SelectItem>
+                        <SelectItem value="long" className="text-zinc-300 focus:bg-white/[0.06] focus:text-white">Long</SelectItem>
+                        <SelectItem value="short" className="text-zinc-300 focus:bg-white/[0.06] focus:text-white">Short</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div className="space-y-2">
+                    <label className="text-[11px] font-semibold text-zinc-500 uppercase tracking-wider">Result</label>
+                    <Select value={profitable} onValueChange={(v) => { setProfitable(v); setPage(1); }}>
+                      <SelectTrigger className="w-full h-9 bg-white/[0.03] border-white/[0.06] text-zinc-300 rounded-lg">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent className="bg-[#161618] border-white/[0.06]">
+                        <SelectItem value="all" className="text-zinc-300 focus:bg-white/[0.06] focus:text-white">All</SelectItem>
+                        <SelectItem value="true" className="text-emerald-400 focus:bg-white/[0.06]">Winners</SelectItem>
+                        <SelectItem value="false" className="text-red-400 focus:bg-white/[0.06]">Losers</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
                 </div>
 
                 {/* Status */}
                 <div className="space-y-2">
-                  <label className="text-xs font-medium text-muted-foreground">Status</label>
-                  <Select value={status} onValueChange={(v) => { setStatus(v); setPage(1); }}>
-                    <SelectTrigger className="w-full">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="all">All</SelectItem>
-                      <SelectItem value="open">Open</SelectItem>
-                      <SelectItem value="closed">Closed</SelectItem>
-                      <SelectItem value="draft">Draft</SelectItem>
-                    </SelectContent>
-                  </Select>
+                  <label className="text-[11px] font-semibold text-zinc-500 uppercase tracking-wider">Status</label>
+                  <div className="flex gap-1.5">
+                    {(['all', 'open', 'closed', 'draft'] as const).map(s => (
+                      <button
+                        key={s}
+                        className={cn(
+                          'px-3 py-1.5 rounded-lg text-xs font-medium transition-colors border',
+                          status === s
+                            ? 'bg-[#8B5CF6]/15 text-[#8B5CF6] border-[#8B5CF6]/20'
+                            : 'bg-white/[0.03] text-zinc-400 border-white/[0.06] hover:bg-white/[0.06]'
+                        )}
+                        onClick={() => { setStatus(s); setPage(1); }}
+                      >
+                        {s.charAt(0).toUpperCase() + s.slice(1)}
+                      </button>
+                    ))}
+                  </div>
                 </div>
 
                 {/* Tags */}
                 {tags.length > 0 && (
                   <div className="space-y-2">
-                    <label className="text-xs font-medium text-muted-foreground">Tags</label>
-                    <div className="flex flex-wrap gap-1.5 max-h-32 overflow-y-auto">
+                    <label className="text-[11px] font-semibold text-zinc-500 uppercase tracking-wider">Tags</label>
+                    <div className="flex flex-wrap gap-1.5 max-h-32 overflow-y-auto pr-1">
                       {tags.map(tag => (
                         <button
                           key={tag.id}
                           className={cn(
-                            'inline-flex items-center gap-1 px-2 py-1 rounded-md text-xs font-medium transition-colors',
+                            'inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-medium transition-colors border',
                             selectedTags.includes(tag.id)
-                              ? 'bg-primary text-primary-foreground'
-                              : 'bg-muted hover:bg-muted/80 text-foreground'
+                              ? 'bg-[#8B5CF6]/15 text-[#8B5CF6] border-[#8B5CF6]/20'
+                              : 'bg-white/[0.03] text-zinc-400 border-white/[0.06] hover:bg-white/[0.06]'
                           )}
                           onClick={() => toggleTag(tag.id)}
                         >
@@ -542,23 +619,28 @@ export default function JournalListPage() {
 
               {/* Reset */}
               {hasActiveFilters && (
-                <Button variant="outline" size="sm" className="w-full" onClick={resetFilters}>
-                  <X className="w-3 h-3 mr-1" />
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="w-full bg-white/[0.03] border-white/[0.06] text-zinc-400 hover:bg-white/[0.06] hover:text-zinc-200 rounded-lg"
+                  onClick={resetFilters}
+                >
+                  <X className="w-3 h-3 mr-1.5" />
                   Reset All Filters
                 </Button>
               )}
             </PopoverContent>
           </Popover>
 
-          {/* Sort */}
+          {/* Sort Select */}
           <Select value={sort} onValueChange={(v) => { setSort(v); setPage(1); }}>
-            <SelectTrigger className="w-[170px] shrink-0">
-              <ArrowUpDown className="w-4 h-4 text-muted-foreground" />
+            <SelectTrigger className="w-[175px] shrink-0 h-11 rounded-xl bg-white/[0.03] border border-white/[0.06] text-zinc-300">
+              <ArrowUpDown className="w-4 h-4 text-zinc-500" />
               <SelectValue />
             </SelectTrigger>
-            <SelectContent>
+            <SelectContent className="bg-[#161618] border-white/[0.06]">
               {SORT_OPTIONS.map(opt => (
-                <SelectItem key={opt.value} value={opt.value}>{opt.label}</SelectItem>
+                <SelectItem key={opt.value} value={opt.value} className="text-zinc-300 focus:bg-white/[0.06] focus:text-white">{opt.label}</SelectItem>
               ))}
             </SelectContent>
           </Select>
@@ -602,7 +684,7 @@ export default function JournalListPage() {
             ) : null;
           })}
           <button
-            className="text-xs text-muted-foreground hover:text-foreground ml-1"
+            className="text-xs text-[#8B5CF6] hover:text-[#A78BFA] ml-1 font-medium transition-colors"
             onClick={resetFilters}
           >
             Clear all
@@ -619,32 +701,39 @@ export default function JournalListPage() {
 
       {/* === Empty States === */}
       {!loading && noTradesAtAll && (
-        <div className="flex flex-col items-center justify-center py-20 text-center">
-          <div className="w-16 h-16 rounded-full bg-muted flex items-center justify-center mb-4">
-            <BookOpen className="w-8 h-8 text-muted-foreground" />
+        <div className="flex flex-col items-center justify-center py-24 text-center">
+          <div className="w-20 h-20 rounded-2xl bg-white/[0.03] border border-white/[0.06] flex items-center justify-center mb-5">
+            <BookOpen className="w-10 h-10 text-zinc-600" />
           </div>
-          <h3 className="text-lg font-semibold mb-1">No trades yet</h3>
-          <p className="text-sm text-muted-foreground max-w-sm mb-6">
+          <h3 className="text-xl font-bold text-zinc-200 mb-2">No trades yet</h3>
+          <p className="text-sm text-zinc-500 max-w-sm mb-8">
             Start logging your trades to build your journal and track your performance over time.
           </p>
-          <Button onClick={() => navigate('trades/new')}>
-            <Plus className="w-4 h-4 mr-1" />
+          <Button
+            onClick={() => navigate('trades/new')}
+            className="bg-[#8B5CF6] hover:bg-[#7C3AED] text-white gap-2"
+          >
+            <Plus className="w-4 h-4" />
             Add your first trade
           </Button>
         </div>
       )}
 
       {!loading && noMatchingFilters && (
-        <div className="flex flex-col items-center justify-center py-20 text-center">
-          <div className="w-16 h-16 rounded-full bg-muted flex items-center justify-center mb-4">
-            <Search className="w-8 h-8 text-muted-foreground" />
+        <div className="flex flex-col items-center justify-center py-24 text-center">
+          <div className="w-20 h-20 rounded-2xl bg-white/[0.03] border border-white/[0.06] flex items-center justify-center mb-5">
+            <Search className="w-10 h-10 text-zinc-600" />
           </div>
-          <h3 className="text-lg font-semibold mb-1">No trades match your filters</h3>
-          <p className="text-sm text-muted-foreground max-w-sm mb-6">
+          <h3 className="text-xl font-bold text-zinc-200 mb-2">No trades match your filters</h3>
+          <p className="text-sm text-zinc-500 max-w-sm mb-8">
             Try adjusting your filters or search terms to find what you&apos;re looking for.
           </p>
-          <Button variant="outline" onClick={resetFilters}>
-            <X className="w-4 h-4 mr-1" />
+          <Button
+            variant="secondary"
+            onClick={resetFilters}
+            className="bg-white/[0.06] hover:bg-white/[0.1] text-zinc-300 border border-white/[0.06] gap-2"
+          >
+            <X className="w-4 h-4" />
             Reset Filters
           </Button>
         </div>
@@ -653,19 +742,19 @@ export default function JournalListPage() {
       {/* === Trade Table === */}
       {!loading && !noTradesAtAll && !noMatchingFilters && (
         <>
-          <Card className="gap-0 py-0 overflow-hidden">
-            <CardContent className="p-0">
+          <div className="bg-[#161618] rounded-xl border border-white/[0.06] overflow-hidden">
+            <div className="overflow-x-auto">
               <Table>
                 <TableHeader>
-                  <TableRow>
-                    <TableHead className="text-xs font-medium">Date</TableHead>
-                    <TableHead className="text-xs font-medium">Symbol</TableHead>
-                    <TableHead className="text-xs font-medium">Direction</TableHead>
-                    <TableHead className="text-xs font-medium text-right">P/L</TableHead>
-                    <TableHead className="text-xs font-medium text-right hidden sm:table-cell">P/L %</TableHead>
-                    <TableHead className="text-xs font-medium hidden md:table-cell">Strategy</TableHead>
-                    <TableHead className="text-xs font-medium">Status</TableHead>
-                    <TableHead className="text-xs font-medium w-8" />
+                  <TableRow className="bg-white/[0.03] border-b border-white/[0.04] hover:bg-white/[0.03]">
+                    <TableHead className="text-[11px] font-semibold text-zinc-500 uppercase tracking-wider h-11">Date</TableHead>
+                    <TableHead className="text-[11px] font-semibold text-zinc-500 uppercase tracking-wider h-11">Symbol</TableHead>
+                    <TableHead className="text-[11px] font-semibold text-zinc-500 uppercase tracking-wider h-11">Direction</TableHead>
+                    <TableHead className="text-[11px] font-semibold text-zinc-500 uppercase tracking-wider h-11 text-right">P/L</TableHead>
+                    <TableHead className="text-[11px] font-semibold text-zinc-500 uppercase tracking-wider h-11 text-right hidden sm:table-cell">P/L %</TableHead>
+                    <TableHead className="text-[11px] font-semibold text-zinc-500 uppercase tracking-wider h-11 hidden md:table-cell">Strategy</TableHead>
+                    <TableHead className="text-[11px] font-semibold text-zinc-500 uppercase tracking-wider h-11">Status</TableHead>
+                    <TableHead className="text-[11px] font-semibold text-zinc-500 uppercase tracking-wider h-11 w-10" />
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -678,65 +767,63 @@ export default function JournalListPage() {
                     return (
                       <TableRow
                         key={trade.id}
-                        className="cursor-pointer"
+                        className="cursor-pointer border-b border-white/[0.03] hover:bg-white/[0.03] transition-colors group"
                         onClick={() => navigate(`trades/${trade.id}`)}
                       >
-                        <TableCell className="text-xs text-muted-foreground py-3">
-                          <div className="flex items-center gap-1.5">
-                            <span>{dateLabel}</span>
-                          </div>
+                        <TableCell className="text-xs text-zinc-500 py-3.5">
+                          {dateLabel}
                         </TableCell>
-                        <TableCell className="font-semibold text-sm py-3">
+                        <TableCell className="font-bold text-sm text-zinc-100 py-3.5">
                           {trade.symbol}
                         </TableCell>
-                        <TableCell className="py-3">
+                        <TableCell className="py-3.5">
                           <DirectionBadge direction={trade.direction} />
                         </TableCell>
-                        <TableCell className="text-right py-3">
+                        <TableCell className="text-right py-3.5">
                           {trade.status === 'closed' ? (
                             <CurrencyBadge value={pnlValue} className="text-sm font-semibold" />
                           ) : (
-                            <span className="text-xs text-muted-foreground">&mdash;</span>
+                            <span className="text-xs text-zinc-600">&mdash;</span>
                           )}
                         </TableCell>
-                        <TableCell className="text-right py-3 hidden sm:table-cell">
+                        <TableCell className="text-right py-3.5 hidden sm:table-cell">
                           {trade.status === 'closed' && trade.pnlPercent != null ? (
                             <span className={cn(
-                              'text-xs font-medium',
-                              pnlPct > 0 ? 'text-emerald-600 dark:text-emerald-400' :
-                              pnlPct < 0 ? 'text-red-600 dark:text-red-400' : 'text-muted-foreground'
+                              'text-xs font-semibold',
+                              pnlPct > 0 ? 'text-emerald-400' :
+                              pnlPct < 0 ? 'text-red-400' : 'text-zinc-500'
                             )}>
                               {pnlPct >= 0 ? '+' : ''}{pnlPct.toFixed(2)}%
                             </span>
                           ) : (
-                            <span className="text-xs text-muted-foreground">&mdash;</span>
+                            <span className="text-xs text-zinc-600">&mdash;</span>
                           )}
                         </TableCell>
-                        <TableCell className="py-3 hidden md:table-cell">
+                        <TableCell className="py-3.5 hidden md:table-cell">
                           {trade.strategy ? (
-                            <span className="text-xs text-muted-foreground">{trade.strategy}</span>
+                            <span className="text-xs text-zinc-400 font-medium">{trade.strategy}</span>
                           ) : (
-                            <span className="text-xs text-muted-foreground">&mdash;</span>
+                            <span className="text-xs text-zinc-600">&mdash;</span>
                           )}
                         </TableCell>
-                        <TableCell className="py-3">
+                        <TableCell className="py-3.5">
                           <StatusBadge status={trade.status} />
                         </TableCell>
-                        <TableCell className="py-3 text-right">
-                          <ChevronDown className="w-4 h-4 text-muted-foreground rotate-[-90deg]" />
+                        <TableCell className="py-3.5 text-right">
+                          <ChevronRight className="w-4 h-4 text-zinc-600 group-hover:text-zinc-400 transition-colors" />
                         </TableCell>
                       </TableRow>
                     );
                   })}
                 </TableBody>
               </Table>
-            </CardContent>
-          </Card>
+            </div>
+          </div>
 
           {/* === Pagination === */}
           {pagination.totalPages > 1 && (
             <div className="flex items-center justify-between">
-              <p className="text-xs text-muted-foreground">
+              <p className="text-xs text-zinc-500">
                 Showing {(pagination.page - 1) * pagination.limit + 1}&ndash;{Math.min(pagination.page * pagination.limit, pagination.total)} of {pagination.total}
               </p>
               <Pagination>
@@ -745,23 +832,32 @@ export default function JournalListPage() {
                     <PaginationLink
                       aria-label="Previous page"
                       onClick={(e) => { e.preventDefault(); if (pagination.page > 1) setPage(pagination.page - 1); }}
-                      className={cn(pagination.page <= 1 && 'pointer-events-none opacity-50')}
+                      className={cn(
+                        'rounded-lg bg-white/[0.03] border border-white/[0.06] text-zinc-400 hover:bg-white/[0.06] hover:text-zinc-200 h-9',
+                        pagination.page <= 1 && 'pointer-events-none opacity-40'
+                      )}
                     >
-                      <ChevronDown className="w-4 h-4 rotate-90" />
-                      <span className="hidden sm:block ml-1">Previous</span>
+                      <ChevronLeft className="w-4 h-4" />
+                      <span className="hidden sm:block ml-1.5 text-xs">Previous</span>
                     </PaginationLink>
                   </PaginationItem>
 
                   {getVisiblePages(pagination.page, pagination.totalPages).map((p, idx) =>
                     p === 'ellipsis' ? (
                       <PaginationItem key={`ellipsis-${idx}`}>
-                        <PaginationEllipsis />
+                        <PaginationEllipsis className="text-zinc-600" />
                       </PaginationItem>
                     ) : (
                       <PaginationItem key={p}>
                         <PaginationLink
                           isActive={p === pagination.page}
                           onClick={(e) => { e.preventDefault(); setPage(p as number); }}
+                          className={cn(
+                            'h-9 w-9 rounded-lg text-xs font-semibold transition-colors',
+                            p === pagination.page
+                              ? 'bg-[#8B5CF6] text-white hover:bg-[#7C3AED] hover:text-white'
+                              : 'bg-white/[0.03] border border-white/[0.06] text-zinc-400 hover:bg-white/[0.06] hover:text-zinc-200'
+                          )}
                         >
                           {p}
                         </PaginationLink>
@@ -773,10 +869,13 @@ export default function JournalListPage() {
                     <PaginationLink
                       aria-label="Next page"
                       onClick={(e) => { e.preventDefault(); if (pagination.page < pagination.totalPages) setPage(pagination.page + 1); }}
-                      className={cn(pagination.page >= pagination.totalPages && 'pointer-events-none opacity-50')}
+                      className={cn(
+                        'rounded-lg bg-white/[0.03] border border-white/[0.06] text-zinc-400 hover:bg-white/[0.06] hover:text-zinc-200 h-9',
+                        pagination.page >= pagination.totalPages && 'pointer-events-none opacity-40'
+                      )}
                     >
-                      <span className="hidden sm:block mr-1">Next</span>
-                      <ChevronDown className="w-4 h-4 rotate-90" />
+                      <span className="hidden sm:block mr-1.5 text-xs">Next</span>
+                      <ChevronRight className="w-4 h-4" />
                     </PaginationLink>
                   </PaginationItem>
                 </PaginationContent>

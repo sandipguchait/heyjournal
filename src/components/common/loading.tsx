@@ -21,7 +21,7 @@ export function EmptyState({
 }) {
   return (
     <div className="flex flex-col items-center justify-center py-16 px-4 text-center">
-      <div className="w-16 h-16 rounded-full bg-muted flex items-center justify-center mb-4">
+      <div className="w-16 h-16 rounded-full bg-muted/50 flex items-center justify-center mb-4">
         <Icon className="w-8 h-8 text-muted-foreground" />
       </div>
       <h3 className="text-lg font-semibold mb-1">{title}</h3>
@@ -34,7 +34,7 @@ export function EmptyState({
 export function PageLoader() {
   return (
     <div className="flex items-center justify-center h-64">
-      <LoadingSpinner size="lg" />
+      <LoadingSpinner />
     </div>
   );
 }
@@ -68,8 +68,8 @@ export function BadgePnl({ value, className }: { value: number; className?: stri
     <span
       className={cn(
         'inline-flex items-center font-medium text-sm',
-        isPositive && 'text-emerald-600 dark:text-emerald-400',
-        !isPositive && !isZero && 'text-red-600 dark:text-red-400',
+        isPositive && 'text-emerald-400',
+        !isPositive && !isZero && 'text-red-400',
         isZero && 'text-muted-foreground',
         className
       )}
@@ -82,23 +82,25 @@ export function BadgePnl({ value, className }: { value: number; className?: stri
 export function CurrencyBadge({ value, className }: { value: number; className?: string }) {
   const isPositive = value > 0;
   const isZero = value === 0;
+  const absVal = Math.abs(value);
+  const formatted = absVal.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
   return (
     <span
       className={cn(
         'inline-flex items-center font-semibold',
-        isPositive && 'text-emerald-600 dark:text-emerald-400',
-        !isPositive && !isZero && 'text-red-600 dark:text-red-400',
+        isPositive && 'text-emerald-400',
+        !isPositive && !isZero && 'text-red-400',
         isZero && 'text-muted-foreground',
         className
       )}
     >
-      {isPositive ? '+$' : isZero ? '$' : '-$'}
-      {Math.abs(value).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+      {isPositive ? '+' : isZero ? '' : '-'}₹{formatted}
     </span>
   );
 }
 
 export function formatCurrency(value: number): string {
-  const sign = value >= 0 ? '' : '-';
-  return `${sign}$${Math.abs(value).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+  const absVal = Math.abs(value);
+  const formatted = absVal.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  return value < 0 ? `-₹${formatted}` : `₹${formatted}`;
 }

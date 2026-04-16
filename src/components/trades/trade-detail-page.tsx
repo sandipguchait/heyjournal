@@ -4,7 +4,6 @@ import React, { useEffect, useState, useCallback } from 'react';
 import { useRouter } from '@/lib/router';
 import { cn } from '@/lib/utils';
 import { CurrencyBadge, LoadingSpinner, ErrorState, formatCurrency } from '@/components/common/loading';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
@@ -36,7 +35,7 @@ import {
   TrendingUp,
   TrendingDown,
   Target,
-  DollarSign,
+  IndianRupee,
   Hash,
   Percent,
   Activity,
@@ -52,6 +51,12 @@ import {
   Briefcase,
   Globe,
   LineChart,
+  Flame,
+  Zap,
+  CircleDot,
+  Layers,
+  Timer,
+  Wallet,
 } from 'lucide-react';
 import { format, parseISO, isValid } from 'date-fns';
 
@@ -106,18 +111,30 @@ interface TradeData {
   tags: TradeTag[];
 }
 
+// --- Card wrapper ---
+
+function DarkCard({ children, className }: { children: React.ReactNode; className?: string }) {
+  return (
+    <div className={cn('bg-[#161618] rounded-xl border border-white/[0.06] p-5', className)}>
+      {children}
+    </div>
+  );
+}
+
 // --- Helper Components ---
 
 function StatusBadge({ status }: { status: string }) {
-  const variants: Record<string, string> = {
-    closed: 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400 border-emerald-200 dark:border-emerald-800',
-    open: 'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400 border-amber-200 dark:border-amber-800',
-    draft: 'bg-muted text-muted-foreground',
+  const config: Record<string, { bg: string; text: string; dot: string }> = {
+    closed: { bg: 'bg-emerald-500/10', text: 'text-emerald-400', dot: 'bg-emerald-400' },
+    open: { bg: 'bg-amber-500/10', text: 'text-amber-400', dot: 'bg-amber-400' },
+    draft: { bg: 'bg-white/[0.06]', text: 'text-zinc-400', dot: 'bg-zinc-400' },
   };
+  const c = config[status] || config.draft;
   return (
-    <Badge variant="outline" className={cn('capitalize text-xs font-medium', variants[status] || variants.draft)}>
-      {status}
-    </Badge>
+    <span className={cn('inline-flex items-center gap-1.5 text-xs font-semibold px-2.5 py-1 rounded-lg', c.bg, c.text)}>
+      <span className={cn('w-1.5 h-1.5 rounded-full', c.dot)} />
+      {status.charAt(0).toUpperCase() + status.slice(1)}
+    </span>
   );
 }
 
@@ -126,43 +143,34 @@ function DirectionBadge({ direction }: { direction: string }) {
   return (
     <span
       className={cn(
-        'inline-flex items-center gap-1 text-sm font-bold px-3 py-1 rounded-md',
+        'inline-flex items-center gap-1.5 text-xs font-bold px-3 py-1.5 rounded-lg',
         isLong
-          ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400'
-          : 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400'
+          ? 'bg-emerald-500/15 text-emerald-400 border border-emerald-500/20'
+          : 'bg-red-500/15 text-red-400 border border-red-500/20'
       )}
     >
-      {isLong ? <ArrowUpRight className="w-4 h-4" /> : <ArrowDownRight className="w-4 h-4" />}
+      {isLong ? <TrendingUp className="w-3.5 h-3.5" /> : <TrendingDown className="w-3.5 h-3.5" />}
       {direction.toUpperCase()}
     </span>
   );
 }
 
-function InfoRow({ icon: Icon, label, value }: { icon: React.ElementType; label: string; value: React.ReactNode }) {
-  return (
-    <div className="flex items-start gap-3 py-2">
-      <Icon className="w-4 h-4 text-muted-foreground mt-0.5 shrink-0" />
-      <div className="min-w-0">
-        <p className="text-xs text-muted-foreground">{label}</p>
-        <p className="text-sm font-medium mt-0.5">{value || <span className="text-muted-foreground">&mdash;</span>}</p>
-      </div>
-    </div>
-  );
-}
-
 function EmotionalBadge({ state }: { state: string }) {
   const colorMap: Record<string, string> = {
-    calm: 'bg-teal-100 text-teal-700 dark:bg-teal-900/30 dark:text-teal-400',
-    confident: 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400',
-    anxious: 'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400',
-    fearful: 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400',
-    greedy: 'bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-400',
-    frustrated: 'bg-rose-100 text-rose-700 dark:bg-rose-900/30 dark:text-rose-400',
-    excited: 'bg-violet-100 text-violet-700 dark:bg-violet-900/30 dark:text-violet-400',
-    neutral: 'bg-slate-100 text-slate-600 dark:bg-slate-800/30 dark:text-slate-400',
+    calm: 'bg-teal-500/15 text-teal-400 border-teal-500/20',
+    confident: 'bg-emerald-500/15 text-emerald-400 border-emerald-500/20',
+    anxious: 'bg-amber-500/15 text-amber-400 border-amber-500/20',
+    fearful: 'bg-red-500/15 text-red-400 border-red-500/20',
+    greedy: 'bg-orange-500/15 text-orange-400 border-orange-500/20',
+    frustrated: 'bg-rose-500/15 text-rose-400 border-rose-500/20',
+    excited: 'bg-violet-500/15 text-violet-400 border-violet-500/20',
+    neutral: 'bg-zinc-500/15 text-zinc-400 border-zinc-500/20',
   };
   return (
-    <span className={cn('inline-flex items-center px-2 py-0.5 rounded text-xs font-medium capitalize', colorMap[state] || colorMap.neutral)}>
+    <span className={cn(
+      'inline-flex items-center px-2.5 py-1 rounded-lg text-xs font-semibold capitalize border',
+      colorMap[state] || colorMap.neutral
+    )}>
       {state}
     </span>
   );
@@ -170,34 +178,82 @@ function EmotionalBadge({ state }: { state: string }) {
 
 function ScreenshotLabelBadge({ label }: { label: string }) {
   const colorMap: Record<string, string> = {
-    'pre-entry': 'bg-sky-100 text-sky-700 dark:bg-sky-900/30 dark:text-sky-400',
-    'entry': 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400',
-    'exit': 'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400',
-    'review': 'bg-violet-100 text-violet-700 dark:bg-violet-900/30 dark:text-violet-400',
+    'pre-entry': 'bg-sky-500/20 text-sky-400',
+    'entry': 'bg-emerald-500/20 text-emerald-400',
+    'exit': 'bg-amber-500/20 text-amber-400',
+    'review': 'bg-violet-500/20 text-violet-400',
   };
   return (
-    <span className={cn('inline-flex items-center px-2 py-0.5 rounded text-xs font-medium capitalize', colorMap[label] || 'bg-muted text-muted-foreground')}>
+    <span className={cn('inline-flex items-center px-2 py-0.5 rounded text-xs font-medium capitalize', colorMap[label] || 'bg-zinc-500/20 text-zinc-400')}>
       {label}
     </span>
   );
 }
 
 function RatingStars({ value, max = 5 }: { value: number | null; max?: number }) {
-  if (value == null) return <span className="text-xs text-muted-foreground">&mdash;</span>;
+  if (value == null) return <span className="text-xs text-zinc-500">&mdash;</span>;
   return (
-    <div className="flex items-center gap-0.5">
+    <div className="flex items-center gap-1">
       {Array.from({ length: max }, (_, i) => (
         <div
           key={i}
           className={cn(
-            'w-3 h-3 rounded-sm',
+            'w-3.5 h-3.5 rounded-sm transition-colors',
             i < value
-              ? 'bg-amber-400 dark:bg-amber-500'
-              : 'bg-muted'
+              ? 'bg-amber-400'
+              : 'bg-zinc-700'
           )}
         />
       ))}
-      <span className="text-xs text-muted-foreground ml-1">{value}/{max}</span>
+      <span className="text-xs text-zinc-500 ml-1.5">{value}/{max}</span>
+    </div>
+  );
+}
+
+function InfoItem({ icon: Icon, label, value }: { icon: React.ElementType; label: string; value: React.ReactNode }) {
+  return (
+    <div className="flex items-center gap-3 py-2.5">
+      <div className="w-8 h-8 rounded-lg bg-white/[0.04] flex items-center justify-center shrink-0">
+        <Icon className="w-4 h-4 text-zinc-400" />
+      </div>
+      <div className="min-w-0 flex-1">
+        <p className="text-[11px] text-zinc-500 font-medium uppercase tracking-wider">{label}</p>
+        <p className="text-sm font-medium text-zinc-200 mt-0.5 truncate">
+          {value || <span className="text-zinc-600">&mdash;</span>}
+        </p>
+      </div>
+    </div>
+  );
+}
+
+function PriceCell({ label, value, icon: Icon, variant = 'default' }: {
+  label: string;
+  value: React.ReactNode;
+  icon: React.ElementType;
+  variant?: 'default' | 'danger' | 'success';
+}) {
+  const bgMap = {
+    default: 'bg-white/[0.03]',
+    danger: 'bg-red-500/[0.06] border-red-500/[0.1]',
+    success: 'bg-emerald-500/[0.06] border-emerald-500/[0.1]',
+  };
+  return (
+    <div className={cn('rounded-xl p-4 border border-white/[0.04]', bgMap[variant])}>
+      <div className="flex items-center gap-2 mb-2">
+        <Icon className={cn(
+          'w-3.5 h-3.5',
+          variant === 'danger' ? 'text-red-400' : variant === 'success' ? 'text-emerald-400' : 'text-zinc-500'
+        )} />
+        <p className={cn(
+          'text-[11px] font-semibold uppercase tracking-wider',
+          variant === 'danger' ? 'text-red-400' : variant === 'success' ? 'text-emerald-400' : 'text-zinc-500'
+        )}>
+          {label}
+        </p>
+      </div>
+      <p className="text-lg font-bold text-zinc-100">
+        {value || <span className="text-zinc-600">&mdash;</span>}
+      </p>
     </div>
   );
 }
@@ -301,374 +357,374 @@ export default function TradeDetailPage({ tradeId }: { tradeId: string }) {
   const pnlValue = trade.pnl ?? 0;
   const pnlPercentValue = trade.pnlPercent ?? 0;
   const isWinner = pnlValue > 0;
+  const isLoser = pnlValue < 0;
 
   const currentScreenshot = trade.screenshots[lightboxIndex];
 
+  const tradeDateParsed = parseISO(trade.tradeDate);
+  const tradeDateLabel = isValid(tradeDateParsed) ? format(tradeDateParsed, 'EEEE, MMMM d, yyyy') : trade.tradeDate;
+  const tradeDateShort = isValid(tradeDateParsed) ? format(tradeDateParsed, 'MMM d, yyyy') : trade.tradeDate;
+
   return (
-    <div className="p-4 md:p-6 max-w-7xl mx-auto w-full space-y-6">
-      {/* === Header === */}
-      <div className="flex flex-col sm:flex-row sm:items-center gap-4">
-        <div className="flex items-center gap-3 flex-1 min-w-0">
-          <Button
-            variant="ghost"
-            size="icon"
-            className="shrink-0"
-            onClick={back}
-          >
-            <ArrowLeft className="w-4 h-4" />
-          </Button>
-          <div className="min-w-0">
-            <div className="flex items-center gap-2 flex-wrap">
-              <h1 className="text-2xl font-bold tracking-tight">{trade.symbol}</h1>
-              <DirectionBadge direction={trade.direction} />
-              <StatusBadge status={trade.status} />
+    <div className="p-4 md:p-6 lg:p-8 max-w-6xl mx-auto w-full space-y-6">
+
+      {/* === Header Section === */}
+      <DarkCard className="relative overflow-hidden">
+        {/* Subtle gradient glow */}
+        {isWinner && (
+          <div className="absolute top-0 right-0 w-64 h-64 bg-emerald-500/5 rounded-full blur-3xl pointer-events-none" />
+        )}
+        {isLoser && (
+          <div className="absolute top-0 right-0 w-64 h-64 bg-red-500/5 rounded-full blur-3xl pointer-events-none" />
+        )}
+
+        <div className="relative">
+          {/* Back + Actions Row */}
+          <div className="flex items-center justify-between mb-5">
+            <Button
+              variant="ghost"
+              size="sm"
+              className="text-zinc-400 hover:text-zinc-200 hover:bg-white/[0.06] -ml-2"
+              onClick={back}
+            >
+              <ArrowLeft className="w-4 h-4 mr-1" />
+              Back
+            </Button>
+
+            <div className="flex items-center gap-2">
+              <Button
+                size="sm"
+                className="bg-[#8B5CF6] hover:bg-[#7C3AED] text-white gap-1.5"
+                onClick={() => navigate(`trades/edit/${tradeId}`)}
+              >
+                <Pencil className="w-3.5 h-3.5" />
+                Edit
+              </Button>
+              <Button
+                variant="secondary"
+                size="sm"
+                className="bg-white/[0.06] hover:bg-white/[0.1] text-zinc-300 border border-white/[0.06] gap-1.5"
+                onClick={handleDuplicate}
+                disabled={duplicating}
+              >
+                <Copy className="w-3.5 h-3.5" />
+                {duplicating ? 'Copying...' : 'Duplicate'}
+              </Button>
+              <Button
+                variant="secondary"
+                size="sm"
+                className="bg-red-500/10 hover:bg-red-500/20 text-red-400 border border-red-500/20 hover:text-red-300"
+                onClick={() => setDeleteOpen(true)}
+              >
+                <Trash2 className="w-3.5 h-3.5" />
+              </Button>
             </div>
-            <p className="text-sm text-muted-foreground mt-0.5">
-              {(() => {
-                const d = parseISO(trade.tradeDate);
-                return isValid(d) ? format(d, 'EEEE, MMMM d, yyyy') : trade.tradeDate;
-              })()}
-            </p>
+          </div>
+
+          {/* Symbol + Badges + P/L */}
+          <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
+            <div>
+              <div className="flex items-center gap-3 flex-wrap mb-2">
+                <h1 className="text-3xl font-bold text-white tracking-tight">{trade.symbol}</h1>
+                <DirectionBadge direction={trade.direction} />
+                <StatusBadge status={trade.status} />
+              </div>
+              <div className="flex items-center gap-3 text-sm text-zinc-500">
+                <span className="flex items-center gap-1.5">
+                  <Calendar className="w-3.5 h-3.5" />
+                  {tradeDateLabel}
+                </span>
+                {trade.strategy && (
+                  <span className="flex items-center gap-1.5">
+                    <BarChart3 className="w-3.5 h-3.5" />
+                    {trade.strategy}
+                  </span>
+                )}
+              </div>
+            </div>
+
+            {/* Large P/L Display */}
+            <div className="text-left sm:text-right">
+              {trade.status === 'closed' ? (
+                <>
+                  <CurrencyBadge value={pnlValue} className="text-3xl sm:text-4xl" />
+                  <div className="flex items-center gap-3 sm:justify-end mt-1">
+                    <span className={cn(
+                      'text-sm font-semibold',
+                      isWinner ? 'text-emerald-400' : isLoser ? 'text-red-400' : 'text-zinc-500'
+                    )}>
+                      {pnlPercentValue >= 0 ? '+' : ''}{pnlPercentValue.toFixed(2)}%
+                    </span>
+                    {trade.rMultiple != null && (
+                      <span className={cn(
+                        'text-sm font-medium px-2 py-0.5 rounded-md',
+                        trade.rMultiple > 0 ? 'bg-emerald-500/10 text-emerald-400' :
+                        trade.rMultiple < 0 ? 'bg-red-500/10 text-red-400' : 'bg-zinc-700 text-zinc-400'
+                      )}>
+                        {trade.rMultiple >= 0 ? '+' : ''}{trade.rMultiple.toFixed(2)}R
+                      </span>
+                    )}
+                  </div>
+                </>
+              ) : (
+                <div className="text-2xl font-bold text-zinc-400">Open Position</div>
+              )}
+            </div>
           </div>
         </div>
+      </DarkCard>
 
-        <div className="flex items-center gap-2 shrink-0">
-          <div className="mr-2 hidden sm:block">
+      {/* === Price Grid + P/L Summary === */}
+      <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+        <PriceCell
+          label="Entry Price"
+          value={formatCurrency(trade.entryPrice)}
+          icon={IndianRupee}
+        />
+        <PriceCell
+          label="Exit Price"
+          value={trade.exitPrice != null ? formatCurrency(trade.exitPrice) : undefined}
+          icon={IndianRupee}
+        />
+        <PriceCell
+          label="Stop Loss"
+          value={trade.stopLoss != null ? formatCurrency(trade.stopLoss) : undefined}
+          icon={Shield}
+          variant="danger"
+        />
+        <PriceCell
+          label="Target"
+          value={trade.targetPrice != null ? formatCurrency(trade.targetPrice) : undefined}
+          icon={Target}
+          variant="success"
+        />
+        <PriceCell
+          label="Quantity"
+          value={trade.quantity.toLocaleString('en-IN')}
+          icon={Layers}
+        />
+        <PriceCell
+          label="Fees"
+          value={formatCurrency(trade.fees)}
+          icon={Wallet}
+        />
+      </div>
+
+      {/* P/L Summary Bar */}
+      <DarkCard className="flex flex-wrap items-center justify-between gap-4">
+        <div className="flex flex-wrap items-center gap-6 sm:gap-8">
+          <div>
+            <p className="text-[11px] font-semibold text-zinc-500 uppercase tracking-wider mb-1">Profit / Loss</p>
             <CurrencyBadge value={pnlValue} className="text-xl" />
-            {trade.status === 'closed' && (
-              <span className={cn(
-                'text-xs font-medium ml-1',
-                isWinner ? 'text-emerald-600 dark:text-emerald-400' : !isWinner && pnlValue !== 0 ? 'text-red-600 dark:text-red-400' : 'text-muted-foreground'
-              )}>
-                ({pnlPercentValue >= 0 ? '+' : ''}{pnlPercentValue.toFixed(2)}%)
-              </span>
-            )}
           </div>
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => navigate(`trades/edit/${tradeId}`)}
-          >
-            <Pencil className="w-4 h-4 mr-1" />
-            Edit
-          </Button>
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={handleDuplicate}
-            disabled={duplicating}
-          >
-            <Copy className="w-4 h-4 mr-1" />
-            {duplicating ? 'Copying...' : 'Duplicate'}
-          </Button>
-          <Button
-            variant="outline"
-            size="sm"
-            className="text-red-600 hover:text-red-700 hover:bg-red-50 dark:text-red-400 dark:hover:bg-red-950/30 border-red-200 dark:border-red-800"
-            onClick={() => setDeleteOpen(true)}
-          >
-            <Trash2 className="w-4 h-4" />
-          </Button>
+          <Separator orientation="vertical" className="h-10 hidden sm:block" />
+          <div>
+            <p className="text-[11px] font-semibold text-zinc-500 uppercase tracking-wider mb-1">Return %</p>
+            <span className={cn(
+              'text-xl font-bold',
+              pnlPercentValue > 0 ? 'text-emerald-400' : pnlPercentValue < 0 ? 'text-red-400' : 'text-zinc-500'
+            )}>
+              {pnlPercentValue >= 0 ? '+' : ''}{pnlPercentValue.toFixed(2)}%
+            </span>
+          </div>
+          <Separator orientation="vertical" className="h-10 hidden sm:block" />
+          <div>
+            <p className="text-[11px] font-semibold text-zinc-500 uppercase tracking-wider mb-1">R-Multiple</p>
+            <span className={cn(
+              'text-xl font-bold',
+              trade.rMultiple != null && trade.rMultiple > 0 ? 'text-emerald-400' :
+              trade.rMultiple != null && trade.rMultiple < 0 ? 'text-red-400' : 'text-zinc-500'
+            )}>
+              {trade.rMultiple != null ? `${trade.rMultiple >= 0 ? '+' : ''}${trade.rMultiple.toFixed(2)}R` : '\u2014'}
+            </span>
+          </div>
+          <Separator orientation="vertical" className="h-10 hidden sm:block" />
+          <div>
+            <p className="text-[11px] font-semibold text-zinc-500 uppercase tracking-wider mb-1">Risk Amount</p>
+            <span className="text-xl font-bold text-zinc-200">
+              {trade.riskAmount != null ? formatCurrency(trade.riskAmount) : '\u2014'}
+            </span>
+          </div>
         </div>
-      </div>
-
-      {/* Mobile P/L */}
-      <div className="sm:hidden">
-        <Card className="gap-4">
-          <CardContent className="px-4 pb-4 text-center">
-            <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider mb-1">P/L</p>
-            <CurrencyBadge value={pnlValue} className="text-3xl" />
-            {trade.status === 'closed' && (
-              <p className={cn(
-                'text-sm font-medium mt-1',
-                isWinner ? 'text-emerald-600 dark:text-emerald-400' : !isWinner && pnlValue !== 0 ? 'text-red-600 dark:text-red-400' : 'text-muted-foreground'
-              )}>
-                {pnlPercentValue >= 0 ? '+' : ''}{pnlPercentValue.toFixed(2)}%
-              </p>
-            )}
-          </CardContent>
-        </Card>
-      </div>
+      </DarkCard>
 
       {/* === Two Column Layout === */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Left Column */}
+
+        {/* Left Column - Trade Info */}
         <div className="lg:col-span-2 space-y-6">
-          {/* Trade Info Card */}
-          <Card>
-            <CardHeader className="pb-3">
-              <CardTitle className="text-sm font-semibold flex items-center gap-2">
-                <Briefcase className="w-4 h-4 text-muted-foreground" />
-                Trade Information
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="px-4 pb-4">
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-0 divide-y sm:divide-y-0 sm:divide-x divide-border">
-                <div className="pr-0 sm:pr-4">
-                  <InfoRow icon={Calendar} label="Trade Date" value={(() => {
-                    const d = parseISO(trade.tradeDate);
-                    return isValid(d) ? format(d, 'MMM d, yyyy') : trade.tradeDate;
-                  })()} />
-                  <InfoRow icon={Clock} label="Entry Time" value={trade.entryTime ? (() => {
-                    const d = parseISO(trade.entryTime);
-                    return isValid(d) ? format(d, 'h:mm a') : trade.entryTime;
-                  })() : null} />
-                  <InfoRow icon={Clock} label="Exit Time" value={trade.exitTime ? (() => {
-                    const d = parseISO(trade.exitTime);
-                    return isValid(d) ? format(d, 'h:mm a') : trade.exitTime;
-                  })() : null} />
-                  <InfoRow icon={Globe} label="Market Type" value={<span className="capitalize">{trade.marketType}</span>} />
-                </div>
-                <div className="pl-0 sm:pl-4">
-                  <InfoRow icon={BarChart3} label="Strategy" value={trade.strategy} />
-                  <InfoRow icon={LineChart} label="Timeframe" value={trade.timeframe} />
-                  <InfoRow icon={Hash} label="Account" value={trade.accountName} />
-                  <InfoRow icon={Shield} label="Broker" value={trade.broker} />
-                </div>
+
+          {/* Trade Info */}
+          <DarkCard>
+            <div className="flex items-center gap-2 mb-4">
+              <Briefcase className="w-4 h-4 text-[#8B5CF6]" />
+              <h2 className="text-sm font-semibold text-zinc-200 uppercase tracking-wider">Trade Information</h2>
+            </div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 divide-y sm:divide-y-0 sm:divide-x divide-white/[0.04]">
+              <div className="pr-0 sm:pr-4">
+                <InfoItem icon={Calendar} label="Trade Date" value={tradeDateShort} />
+                <InfoItem icon={Clock} label="Entry Time" value={trade.entryTime ? (() => {
+                  const d = parseISO(trade.entryTime);
+                  return isValid(d) ? format(d, 'h:mm a') : trade.entryTime;
+                })() : null} />
+                <InfoItem icon={Clock} label="Exit Time" value={trade.exitTime ? (() => {
+                  const d = parseISO(trade.exitTime);
+                  return isValid(d) ? format(d, 'h:mm a') : trade.exitTime;
+                })() : null} />
+                <InfoItem icon={Globe} label="Market Type" value={<span className="capitalize">{trade.marketType}</span>} />
               </div>
-            </CardContent>
-          </Card>
-
-          {/* Price Details Card */}
-          <Card>
-            <CardHeader className="pb-3">
-              <CardTitle className="text-sm font-semibold flex items-center gap-2">
-                <DollarSign className="w-4 h-4 text-muted-foreground" />
-                Price Details
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="px-4 pb-4">
-              <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
-                {/* Entry Price */}
-                <div className="p-3 rounded-lg bg-muted/50">
-                  <p className="text-xs text-muted-foreground font-medium">Entry Price</p>
-                  <p className="text-lg font-semibold mt-1">{formatCurrency(trade.entryPrice)}</p>
-                </div>
-
-                {/* Exit Price */}
-                <div className="p-3 rounded-lg bg-muted/50">
-                  <p className="text-xs text-muted-foreground font-medium">Exit Price</p>
-                  <p className="text-lg font-semibold mt-1">
-                    {trade.exitPrice != null ? formatCurrency(trade.exitPrice) : <span className="text-muted-foreground">&mdash;</span>}
-                  </p>
-                </div>
-
-                {/* Stop Loss */}
-                <div className="p-3 rounded-lg bg-red-50 dark:bg-red-950/20">
-                  <p className="text-xs text-red-600 dark:text-red-400 font-medium">Stop Loss</p>
-                  <p className="text-lg font-semibold mt-1">
-                    {trade.stopLoss != null ? formatCurrency(trade.stopLoss) : <span className="text-muted-foreground">&mdash;</span>}
-                  </p>
-                </div>
-
-                {/* Target Price */}
-                <div className="p-3 rounded-lg bg-emerald-50 dark:bg-emerald-950/20">
-                  <p className="text-xs text-emerald-600 dark:text-emerald-400 font-medium">Target</p>
-                  <p className="text-lg font-semibold mt-1">
-                    {trade.targetPrice != null ? formatCurrency(trade.targetPrice) : <span className="text-muted-foreground">&mdash;</span>}
-                  </p>
-                </div>
-
-                {/* Quantity */}
-                <div className="p-3 rounded-lg bg-muted/50">
-                  <p className="text-xs text-muted-foreground font-medium">Quantity</p>
-                  <p className="text-lg font-semibold mt-1">{trade.quantity}</p>
-                </div>
-
-                {/* Fees */}
-                <div className="p-3 rounded-lg bg-muted/50">
-                  <p className="text-xs text-muted-foreground font-medium">Fees</p>
-                  <p className="text-lg font-semibold mt-1">{formatCurrency(trade.fees)}</p>
-                </div>
+              <div className="pl-0 sm:pl-4">
+                <InfoItem icon={BarChart3} label="Strategy" value={trade.strategy} />
+                <InfoItem icon={LineChart} label="Timeframe" value={trade.timeframe} />
+                <InfoItem icon={Hash} label="Account" value={trade.accountName} />
+                <InfoItem icon={Shield} label="Broker" value={trade.broker} />
               </div>
+            </div>
+          </DarkCard>
 
-              <Separator className="my-4" />
-
-              <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-                {/* P/L */}
-                <div className="text-center p-3">
-                  <p className="text-xs text-muted-foreground font-medium">Profit / Loss</p>
-                  <CurrencyBadge value={pnlValue} className="text-xl mt-1 block" />
-                </div>
-
-                {/* P/L % */}
-                <div className="text-center p-3">
-                  <p className="text-xs text-muted-foreground font-medium">P/L %</p>
-                  <span className={cn(
-                    'text-xl font-semibold block mt-1',
-                    pnlPercentValue > 0 ? 'text-emerald-600 dark:text-emerald-400' :
-                    pnlPercentValue < 0 ? 'text-red-600 dark:text-red-400' : 'text-muted-foreground'
-                  )}>
-                    {pnlPercentValue >= 0 ? '+' : ''}{pnlPercentValue.toFixed(2)}%
-                  </span>
-                </div>
-
-                {/* R-Multiple */}
-                <div className="text-center p-3">
-                  <p className="text-xs text-muted-foreground font-medium">R-Multiple</p>
-                  <span className={cn(
-                    'text-xl font-semibold block mt-1',
-                    trade.rMultiple != null && trade.rMultiple > 0 ? 'text-emerald-600 dark:text-emerald-400' :
-                    trade.rMultiple != null && trade.rMultiple < 0 ? 'text-red-600 dark:text-red-400' : 'text-muted-foreground'
-                  )}>
-                    {trade.rMultiple != null ? `${trade.rMultiple >= 0 ? '+' : ''}${trade.rMultiple.toFixed(2)}R` : '\u2014'}
-                  </span>
-                </div>
-
-                {/* Risk Amount */}
-                <div className="text-center p-3">
-                  <p className="text-xs text-muted-foreground font-medium">Risk Amount</p>
-                  <p className="text-xl font-semibold block mt-1">
-                    {trade.riskAmount != null ? formatCurrency(trade.riskAmount) : '\u2014'}
-                  </p>
-                </div>
+          {/* Screenshots Gallery */}
+          {trade.screenshots.length > 0 && (
+            <DarkCard>
+              <div className="flex items-center gap-2 mb-4">
+                <ImageIcon className="w-4 h-4 text-[#8B5CF6]" />
+                <h2 className="text-sm font-semibold text-zinc-200 uppercase tracking-wider">Screenshots</h2>
+                <Badge variant="secondary" className="text-[10px] bg-white/[0.06] text-zinc-400 ml-auto">
+                  {trade.screenshots.length} image{trade.screenshots.length !== 1 ? 's' : ''}
+                </Badge>
               </div>
-            </CardContent>
-          </Card>
+              <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                {trade.screenshots.map((ss, idx) => (
+                  <button
+                    key={ss.id}
+                    className="relative group rounded-xl overflow-hidden border border-white/[0.06] aspect-video bg-[#0d0d0e] cursor-pointer hover:border-[#8B5CF6]/30 transition-colors"
+                    onClick={() => openLightbox(idx)}
+                  >
+                    <img
+                      src={ss.imageUrl}
+                      alt={ss.label}
+                      className="w-full h-full object-cover transition-transform group-hover:scale-105"
+                    />
+                    <div className="absolute inset-0 bg-black/0 group-hover:bg-black/30 transition-colors flex items-center justify-center">
+                      <div className="w-10 h-10 rounded-full bg-white/10 backdrop-blur-sm flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+                        <Activity className="w-5 h-5 text-white" />
+                      </div>
+                    </div>
+                    <div className="absolute bottom-2 left-2">
+                      <ScreenshotLabelBadge label={ss.label} />
+                    </div>
+                  </button>
+                ))}
+              </div>
+            </DarkCard>
+          )}
         </div>
 
         {/* Right Column */}
         <div className="space-y-6">
+
           {/* Psychology Card */}
-          <Card>
-            <CardHeader className="pb-3">
-              <CardTitle className="text-sm font-semibold flex items-center gap-2">
-                <Brain className="w-4 h-4 text-muted-foreground" />
-                Psychology
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="px-4 pb-4 space-y-3">
-              <div className="flex items-center justify-between">
-                <span className="text-xs text-muted-foreground">Before Trade</span>
+          <DarkCard>
+            <div className="flex items-center gap-2 mb-4">
+              <Brain className="w-4 h-4 text-[#8B5CF6]" />
+              <h2 className="text-sm font-semibold text-zinc-200 uppercase tracking-wider">Psychology</h2>
+            </div>
+            <div className="space-y-4">
+              <div>
+                <p className="text-[11px] font-semibold text-zinc-500 uppercase tracking-wider mb-2">Before Trade</p>
                 {trade.emotionalStateBefore ? (
                   <EmotionalBadge state={trade.emotionalStateBefore} />
                 ) : (
-                  <span className="text-xs text-muted-foreground">&mdash;</span>
+                  <span className="text-xs text-zinc-600">&mdash;</span>
                 )}
               </div>
-              <Separator />
-              <div className="flex items-center justify-between">
-                <span className="text-xs text-muted-foreground">After Trade</span>
+              <Separator className="bg-white/[0.04]" />
+              <div>
+                <p className="text-[11px] font-semibold text-zinc-500 uppercase tracking-wider mb-2">After Trade</p>
                 {trade.emotionalStateAfter ? (
                   <EmotionalBadge state={trade.emotionalStateAfter} />
                 ) : (
-                  <span className="text-xs text-muted-foreground">&mdash;</span>
+                  <span className="text-xs text-zinc-600">&mdash;</span>
                 )}
               </div>
-              <Separator />
+              <Separator className="bg-white/[0.04]" />
               <div className="flex items-center justify-between">
-                <span className="text-xs text-muted-foreground">Setup Quality</span>
+                <p className="text-[11px] font-semibold text-zinc-500 uppercase tracking-wider">Setup Quality</p>
                 <RatingStars value={trade.setupQuality} />
               </div>
-              <Separator />
+              <Separator className="bg-white/[0.04]" />
               <div className="flex items-center justify-between">
-                <span className="text-xs text-muted-foreground">Confidence</span>
+                <p className="text-[11px] font-semibold text-zinc-500 uppercase tracking-wider">Confidence</p>
                 <RatingStars value={trade.confidenceRating} />
               </div>
-            </CardContent>
-          </Card>
+            </div>
+          </DarkCard>
 
           {/* Notes Card */}
           {(trade.notes || trade.mistakes || trade.lessonsLearned) && (
-            <Card>
-              <CardHeader className="pb-3">
-                <CardTitle className="text-sm font-semibold flex items-center gap-2">
-                  <FileText className="w-4 h-4 text-muted-foreground" />
-                  Notes
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="px-4 pb-4 space-y-3">
+            <DarkCard>
+              <div className="flex items-center gap-2 mb-4">
+                <FileText className="w-4 h-4 text-[#8B5CF6]" />
+                <h2 className="text-sm font-semibold text-zinc-200 uppercase tracking-wider">Notes</h2>
+              </div>
+              <div className="space-y-4">
                 {trade.notes && (
-                  <div>
-                    <p className="text-xs font-medium text-muted-foreground mb-1">Notes</p>
-                    <p className="text-sm whitespace-pre-wrap leading-relaxed">{trade.notes}</p>
+                  <div className="p-3 rounded-lg bg-white/[0.02]">
+                    <p className="text-[11px] font-semibold text-zinc-500 uppercase tracking-wider mb-1.5">Notes</p>
+                    <p className="text-sm text-zinc-300 whitespace-pre-wrap leading-relaxed">{trade.notes}</p>
                   </div>
                 )}
-                {trade.notes && trade.mistakes && <Separator />}
                 {trade.mistakes && (
-                  <div>
-                    <p className="text-xs font-medium text-muted-foreground mb-1">Mistakes</p>
-                    <p className="text-sm whitespace-pre-wrap leading-relaxed text-red-600 dark:text-red-400">{trade.mistakes}</p>
+                  <div className="p-3 rounded-lg bg-red-500/[0.04] border border-red-500/[0.08]">
+                    <p className="text-[11px] font-semibold text-red-400 uppercase tracking-wider mb-1.5">Mistakes</p>
+                    <p className="text-sm text-red-300/80 whitespace-pre-wrap leading-relaxed">{trade.mistakes}</p>
                   </div>
                 )}
-                {(trade.notes || trade.mistakes) && trade.lessonsLearned && <Separator />}
                 {trade.lessonsLearned && (
-                  <div>
-                    <p className="text-xs font-medium text-muted-foreground mb-1">Lessons Learned</p>
-                    <p className="text-sm whitespace-pre-wrap leading-relaxed text-emerald-600 dark:text-emerald-400">{trade.lessonsLearned}</p>
+                  <div className="p-3 rounded-lg bg-emerald-500/[0.04] border border-emerald-500/[0.08]">
+                    <p className="text-[11px] font-semibold text-emerald-400 uppercase tracking-wider mb-1.5">Lessons Learned</p>
+                    <p className="text-sm text-emerald-300/80 whitespace-pre-wrap leading-relaxed">{trade.lessonsLearned}</p>
                   </div>
                 )}
-              </CardContent>
-            </Card>
+              </div>
+            </DarkCard>
           )}
 
           {/* Tags Card */}
           {trade.tags.length > 0 && (
-            <Card>
-              <CardHeader className="pb-3">
-                <CardTitle className="text-sm font-semibold flex items-center gap-2">
-                  <Tag className="w-4 h-4 text-muted-foreground" />
-                  Tags
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="px-4 pb-4">
-                <div className="flex flex-wrap gap-1.5">
-                  {trade.tags.map((tag) => (
-                    <Badge key={tag.id} variant="secondary" className="text-xs">
-                      {tag.name}
-                    </Badge>
-                  ))}
-                </div>
-              </CardContent>
-            </Card>
-          )}
-
-          {/* Screenshots Gallery */}
-          {trade.screenshots.length > 0 && (
-            <Card>
-              <CardHeader className="pb-3">
-                <CardTitle className="text-sm font-semibold flex items-center gap-2">
-                  <ImageIcon className="w-4 h-4 text-muted-foreground" />
-                  Screenshots
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="px-4 pb-4">
-                <div className="grid grid-cols-2 gap-2">
-                  {trade.screenshots.map((ss, idx) => (
-                    <button
-                      key={ss.id}
-                      className="relative group rounded-lg overflow-hidden border border-border aspect-video bg-muted cursor-pointer"
-                      onClick={() => openLightbox(idx)}
-                    >
-                      <img
-                        src={ss.imageUrl}
-                        alt={ss.label}
-                        className="w-full h-full object-cover transition-transform group-hover:scale-105"
-                      />
-                      <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors" />
-                      <div className="absolute bottom-1 left-1">
-                        <ScreenshotLabelBadge label={ss.label} />
-                      </div>
-                    </button>
-                  ))}
-                </div>
-              </CardContent>
-            </Card>
+            <DarkCard>
+              <div className="flex items-center gap-2 mb-3">
+                <Tag className="w-4 h-4 text-[#8B5CF6]" />
+                <h2 className="text-sm font-semibold text-zinc-200 uppercase tracking-wider">Tags</h2>
+              </div>
+              <div className="flex flex-wrap gap-2">
+                {trade.tags.map((tag) => (
+                  <Badge
+                    key={tag.id}
+                    variant="secondary"
+                    className="bg-white/[0.06] text-zinc-300 hover:bg-white/[0.1] border border-white/[0.04] text-xs font-medium"
+                  >
+                    {tag.name}
+                  </Badge>
+                ))}
+              </div>
+            </DarkCard>
           )}
         </div>
       </div>
 
       {/* === Delete Confirmation === */}
       <AlertDialog open={deleteOpen} onOpenChange={setDeleteOpen}>
-        <AlertDialogContent>
+        <AlertDialogContent className="bg-[#161618] border-white/[0.06]">
           <AlertDialogHeader>
-            <AlertDialogTitle>Delete Trade</AlertDialogTitle>
-            <AlertDialogDescription>
+            <AlertDialogTitle className="text-zinc-100">Delete Trade</AlertDialogTitle>
+            <AlertDialogDescription className="text-zinc-400">
               Are you sure you want to delete this {trade.symbol} trade? This action cannot be undone. All associated screenshots and tags will also be removed.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel disabled={deleting}>Cancel</AlertDialogCancel>
+            <AlertDialogCancel disabled={deleting} className="bg-white/[0.06] text-zinc-300 border-white/[0.06] hover:bg-white/[0.1]">
+              Cancel
+            </AlertDialogCancel>
             <AlertDialogAction
               onClick={handleDelete}
               disabled={deleting}
@@ -683,7 +739,7 @@ export default function TradeDetailPage({ tradeId }: { tradeId: string }) {
       {/* === Screenshot Lightbox === */}
       <Dialog open={lightboxOpen} onOpenChange={setLightboxOpen}>
         <DialogContent
-          className="max-w-4xl p-0 overflow-hidden bg-black border-black"
+          className="max-w-5xl p-0 overflow-hidden bg-black/95 border-white/[0.06] backdrop-blur-xl"
           showCloseButton={false}
         >
           <DialogTitle className="sr-only">
@@ -691,32 +747,32 @@ export default function TradeDetailPage({ tradeId }: { tradeId: string }) {
           </DialogTitle>
           {currentScreenshot && (
             <div className="relative flex flex-col items-center">
-              <div className="flex items-center justify-between w-full p-3 bg-black/80">
+              <div className="flex items-center justify-between w-full px-4 py-3 bg-white/[0.03] border-b border-white/[0.06]">
                 <ScreenshotLabelBadge label={currentScreenshot.label} />
-                <span className="text-xs text-white/60">
+                <span className="text-xs text-zinc-500">
                   {lightboxIndex + 1} / {trade.screenshots.length}
                 </span>
                 <Button
                   variant="ghost"
                   size="icon"
-                  className="text-white hover:bg-white/10 h-8 w-8"
+                  className="text-zinc-400 hover:text-white hover:bg-white/10 h-8 w-8"
                   onClick={() => setLightboxOpen(false)}
                 >
                   <X className="w-4 h-4" />
                 </Button>
               </div>
-              <div className="relative w-full flex items-center justify-center">
+              <div className="relative w-full flex items-center justify-center bg-black min-h-[50vh]">
                 <img
                   src={currentScreenshot.imageUrl}
                   alt={currentScreenshot.label}
-                  className="max-h-[70vh] max-w-full object-contain"
+                  className="max-h-[75vh] max-w-full object-contain"
                 />
                 {trade.screenshots.length > 1 && (
                   <>
                     <Button
                       variant="ghost"
                       size="icon"
-                      className="absolute left-2 top-1/2 -translate-y-1/2 text-white hover:bg-white/10 h-10 w-10 rounded-full"
+                      className="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-400 hover:text-white hover:bg-white/10 h-10 w-10 rounded-full bg-black/40"
                       onClick={lightboxPrev}
                     >
                       <ChevronLeft className="w-5 h-5" />
@@ -724,7 +780,7 @@ export default function TradeDetailPage({ tradeId }: { tradeId: string }) {
                     <Button
                       variant="ghost"
                       size="icon"
-                      className="absolute right-2 top-1/2 -translate-y-1/2 text-white hover:bg-white/10 h-10 w-10 rounded-full"
+                      className="absolute right-3 top-1/2 -translate-y-1/2 text-zinc-400 hover:text-white hover:bg-white/10 h-10 w-10 rounded-full bg-black/40"
                       onClick={lightboxNext}
                     >
                       <ChevronRight className="w-5 h-5" />
