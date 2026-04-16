@@ -17,14 +17,10 @@ import {
   ChevronRight,
   TrendingUp,
   X,
-  Sun,
-  Moon,
-  Monitor,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Separator } from '@/components/ui/separator';
-import { useTheme } from '@/lib/theme-provider';
 
 const navItems = [
   { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard },
@@ -40,7 +36,6 @@ const navItems = [
 export function AppSidebar() {
   const { route, navigate } = useRouter();
   const { sidebarOpen, setSidebarOpen } = useApp();
-  const { theme, setTheme } = useTheme();
 
   const activeRoute = route === 'trade-detail' || route === 'trade-edit' ? 'journal' : route;
   const activeRouteKey = route === 'review-daily-new' || route === 'review-daily-edit' || route === 'review-period-new' || route === 'review-period-edit' ? 'reviews' : activeRoute;
@@ -55,13 +50,7 @@ export function AppSidebar() {
     }
   };
 
-  const cycleTheme = () => {
-    if (theme === 'light') setTheme('dark');
-    else if (theme === 'dark') setTheme('system');
-    else setTheme('light');
-  };
 
-  const ThemeIcon = theme === 'dark' ? Moon : theme === 'light' ? Sun : Monitor;
 
   return (
     <>
@@ -147,15 +136,6 @@ export function AppSidebar() {
           'flex items-center p-3 gap-2',
           !sidebarOpen && 'lg:justify-center lg:px-2'
         )}>
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={cycleTheme}
-            title={`Theme: ${theme}`}
-            className="text-muted-foreground hover:text-foreground"
-          >
-            <ThemeIcon className="w-4 h-4" />
-          </Button>
           {sidebarOpen && (
             <Button
               variant="ghost"

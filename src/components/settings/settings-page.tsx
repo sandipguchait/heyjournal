@@ -16,13 +16,11 @@ import {
   Settings,
   Globe,
   IndianRupee,
-  Palette,
   Save,
   Loader2,
   CheckCircle2,
   TrendingUp,
 } from 'lucide-react';
-import { useTheme } from '@/lib/theme-provider';
 
 // --- Constants ---
 
@@ -63,11 +61,7 @@ const CURRENCY_OPTIONS = [
   { value: 'SGD', label: 'SGD - Singapore Dollar' },
 ];
 
-const THEME_OPTIONS = [
-  { value: 'dark', label: 'Dark' },
-  { value: 'light', label: 'Light' },
-  { value: 'system', label: 'System' },
-];
+
 
 interface SettingsData {
   id: string;
@@ -83,12 +77,9 @@ const darkCard = 'bg-[#161618] rounded-xl border border-white/[0.06] p-5';
 const darkInput = 'bg-white/[0.03] border-white/[0.08] rounded-lg focus:border-primary/50';
 
 export default function SettingsPage() {
-  const { theme, setTheme } = useTheme();
-
   const [defaultMarket, setDefaultMarket] = useState<string>('equity');
   const [defaultTimezone, setDefaultTimezone] = useState<string>('Asia/Kolkata');
   const [defaultCurrency, setDefaultCurrency] = useState<string>('INR');
-  const [themeValue, setThemeValue] = useState<string>('dark');
 
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -104,18 +95,14 @@ export default function SettingsPage() {
       setDefaultMarket(data.defaultMarket || 'equity');
       setDefaultTimezone(data.defaultTimezone || 'Asia/Kolkata');
       setDefaultCurrency(data.defaultCurrency || 'INR');
-      setThemeValue(data.theme || 'dark');
+
     } catch (err) { setError(err instanceof Error ? err.message : 'Failed to load settings'); }
     finally { setLoading(false); }
   }, []);
 
   useEffect(() => { fetchSettings(); }, [fetchSettings]);
 
-  const handleThemeChange = (newTheme: string) => {
-    setThemeValue(newTheme);
-    setTheme(newTheme as 'light' | 'dark' | 'system');
-    setSaved(false);
-  };
+
 
   const handleSave = async () => {
     try {
@@ -123,7 +110,7 @@ export default function SettingsPage() {
       const res = await fetch('/api/settings', {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ defaultMarket, defaultTimezone, defaultCurrency, theme: themeValue }),
+        body: JSON.stringify({ defaultMarket, defaultTimezone, defaultCurrency }),
       });
       if (!res.ok) { const errData = await res.json().catch(() => ({})); throw new Error(errData.error || `HTTP ${res.status}`); }
       setSaved(true);
@@ -224,36 +211,6 @@ export default function SettingsPage() {
             </SelectContent>
           </Select>
           <p className="text-xs text-muted-foreground">Used for date/time display in your journal</p>
-        </div>
-      </div>
-
-      {/* Appearance */}
-      <div className={cn(darkCard, 'space-y-6')}>
-        <div>
-          <div className="flex items-center gap-2">
-            <div className="w-8 h-8 rounded-lg bg-primary/15 text-primary flex items-center justify-center">
-              <Palette className="w-4 h-4" />
-            </div>
-            <div>
-              <p className="text-sm font-semibold">Appearance</p>
-              <p className="text-xs text-muted-foreground">Customize how the app looks</p>
-            </div>
-          </div>
-        </div>
-
-        <div className="space-y-2">
-          <Label className="text-sm font-medium">Theme</Label>
-          <Select value={themeValue} onValueChange={handleThemeChange}>
-            <SelectTrigger className={cn(darkInput, 'max-w-xs')}>
-              <SelectValue placeholder="Select theme" />
-            </SelectTrigger>
-            <SelectContent>
-              {THEME_OPTIONS.map((opt) => (<SelectItem key={opt.value} value={opt.value}>{opt.label}</SelectItem>))}
-            </SelectContent>
-          </Select>
-          <p className="text-xs text-muted-foreground">
-            Current: <span className="font-medium capitalize">{theme}</span>
-          </p>
         </div>
       </div>
 
