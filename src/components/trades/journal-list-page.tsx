@@ -517,12 +517,12 @@ export default function JournalListPage() {
                 {/* Strategy */}
                 <div className="space-y-2">
                   <label className="text-[11px] font-semibold text-zinc-500 uppercase tracking-wider">Strategy</label>
-                  <Select value={strategy} onValueChange={(v) => { setStrategy(v); setPage(1); }}>
+                  <Select value={strategy || '__all__'} onValueChange={(v) => { setStrategy(v === '__all__' ? '' : v); setPage(1); }}>
                     <SelectTrigger className="w-full h-9 bg-white/[0.03] border-white/[0.06] text-zinc-300 rounded-lg">
                       <SelectValue placeholder="All Strategies" />
                     </SelectTrigger>
                     <SelectContent className="bg-[#161618] border-white/[0.06] max-h-60">
-                      <SelectItem value="" className="text-zinc-300 focus:bg-white/[0.06] focus:text-white">All Strategies</SelectItem>
+                      <SelectItem value="__all__" className="text-zinc-300 focus:bg-white/[0.06] focus:text-white">All Strategies</SelectItem>
                       {INDIAN_STRATEGIES.map(s => (
                         <SelectItem key={s} value={s} className="text-zinc-300 focus:bg-white/[0.06] focus:text-white">{s}</SelectItem>
                       ))}

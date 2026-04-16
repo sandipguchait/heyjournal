@@ -76,12 +76,12 @@ export async function GET(request: NextRequest) {
       }
     }
 
-    if (symbol) where.symbol = { contains: symbol, mode: 'insensitive' };
-    if (strategy) where.strategy = { contains: strategy, mode: 'insensitive' };
+    if (symbol) where.symbol = { contains: symbol };
+    if (strategy) where.strategy = { contains: strategy };
     if (marketType) where.marketType = marketType;
     if (direction) where.direction = direction;
     if (status) where.status = status;
-    if (accountName) where.accountName = { contains: accountName, mode: 'insensitive' };
+    if (accountName) where.accountName = { contains: accountName };
 
     if (profitable === 'true') {
       where.pnl = { gt: 0 };
@@ -100,11 +100,11 @@ export async function GET(request: NextRequest) {
 
     if (search) {
       where.OR = [
-        { symbol: { contains: search, mode: 'insensitive' } },
-        { notes: { contains: search, mode: 'insensitive' } },
-        { strategy: { contains: search, mode: 'insensitive' } },
-        { mistakes: { contains: search, mode: 'insensitive' } },
-        { lessonsLearned: { contains: search, mode: 'insensitive' } },
+        { symbol: { contains: search } },
+        { notes: { contains: search } },
+        { strategy: { contains: search } },
+        { mistakes: { contains: search } },
+        { lessonsLearned: { contains: search } },
       ];
     }
 

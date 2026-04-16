@@ -66,6 +66,8 @@ function parseHash(hash: string): { route: string; params: RouteParams } {
         route = 'review-period-new';
         params.periodType = 'monthly';
       }
+    } else if (segments[0] === 'settings' && segments[1] === 'import-export') {
+      route = 'import-export';
     }
   }
 
