@@ -1,0 +1,164 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id           String   @id @default(cuid())
+  name         String
+  email        String   @unique
+  passwordHash String   @default("")
+  timezone     String   @default("UTC")
+  currency     String   @default("USD")
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  trades         Trade[]
+  tradeTags      TradeTag[]
+  dailyReviews   DailyReview[]
+  periodReviews  PeriodReview[]
+  settings       UserSettings?
+
+  @@index([email])
+}
+
+model UserSettings {
+  id                  String @id @default(cuid())
+  userId              String @unique
+  defaultMarket       String @default("stocks")
+  defaultTimezone     String @default("UTC")
+  defaultCurrency     String @default("USD")
+  theme               String @default("system")
+  notificationEnabled Boolean @default(true)
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model Trade {
+  id                  String   @id @default(cuid())
+  userId              String
+  symbol              String
+  marketType          String   @default("stocks")
+  direction           String   @default("long")
+  tradeDate           DateTime
+  entryTime           DateTime?
+  exitTime            DateTime?
+  entryPrice          Float
+  exitPrice           Float?
+  quantity            Float    @default(1)
+  stopLoss            Float?
+  targetPrice         Float?
+  fees                Float    @default(0)
+  pnl                 Float?
+  pnlPercent          Float?
+  riskAmount          Float?
+  rMultiple           Float?
+  strategy            String?
+  timeframe           String?
+  accountName         String?
+  broker              String?
+  setupQuality        Int?
+  confidenceRating    Int?
+  emotionalStateBefore String?
+  emotionalStateAfter  String?
+  notes               String?
+  mistakes            String?
+  lessonsLearned      String?
+  status              String   @default("closed")
+  createdAt           DateTime @default(now())
+  updatedAt           DateTime @updatedAt
+
+  user       User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  screenshots TradeScreenshot[]
+  tags       TradeTagMap[]
+
+  @@index([userId])
+  @@index([tradeDate])
+  @@index([symbol])
+  @@index([strategy])
+  @@index([status])
+}
+
+model TradeTag {
+  id     String @id @default(cuid())
+  userId String
+  name   String
+
+  user  User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+  trades TradeTagMap[]
+
+  @@unique([userId, name])
+  @@index([userId])
+}
+
+model TradeTagMap {
+  id     String   @id @default(cuid())
+  tradeId String
+  tagId  String
+  createdAt DateTime @default(now())
+
+  trade Trade    @relation(fields: [tradeId], references: [id], onDelete: Cascade)
+  tag   TradeTag @relation(fields: [tagId], references: [id], onDelete: Cascade)
+
+  @@unique([tradeId, tagId])
+  @@index([tradeId])
+  @@index([tagId])
+}
+
+model TradeScreenshot {
+  id        String   @id @default(cuid())
+  tradeId   String
+  imageUrl  String
+  label     String   @default("entry")
+  sortOrder Int      @default(0)
+  createdAt DateTime @default(now())
+
+  trade Trade @relation(fields: [tradeId], references: [id], onDelete: Cascade)
+
+  @@index([tradeId])
+}
+
+model DailyReview {
+  id             String   @id @default(cuid())
+  userId         String
+  reviewDate     DateTime
+  summary        String?
+  whatWentWell   String?
+  mistakesMade   String?
+  emotionalState String?
+  lessonLearned  String?
+  tomorrowPlan   String?
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, reviewDate])
+  @@index([userId])
+  @@index([reviewDate])
+}
+
+model PeriodReview {
+  id               String   @id @default(cuid())
+  userId           String
+  periodType       String
+  startDate        DateTime
+  endDate          DateTime
+  performanceSummary String?
+  bestSetups       String?
+  repeatedMistakes String?
+  ruleViolations   String?
+  improvementPlan  String?
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, periodType, startDate])
+  @@index([userId])
+  @@index([periodType])
+}
