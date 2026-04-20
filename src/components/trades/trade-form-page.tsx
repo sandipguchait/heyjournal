@@ -111,6 +111,8 @@ const BROKER_PRESETS = [
   '5paisa',
   'Sharekhan',
   'Edelweiss',
+  'Dhan',
+  'INDMoney',
   'Other',
 ];
 
