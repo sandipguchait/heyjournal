@@ -1,6 +1,6 @@
 'use client';
 
-import { createContext, useContext, useEffect, useState, useCallback, ReactNode } from 'react';
+import { createContext, useContext, useEffect, useState, useCallback, useMemo } from 'react';
 
 type Route = string;
 type RouteParams = Record<string, string>;
@@ -98,8 +98,10 @@ export function HashRouter({ children }: { children: ReactNode }) {
 
   const { route, params } = parseHash(currentHash);
 
+  const contextValue = useMemo(() => ({ route, params, navigate, back }), [route, params, navigate, back]);
+
   return (
-    <RouterContext.Provider value={{ route, params, navigate, back }}>
+    <RouterContext.Provider value={contextValue}>
       {children}
     </RouterContext.Provider>
   );

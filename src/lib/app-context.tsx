@@ -1,6 +1,6 @@
 'use client';
 
-import { createContext, useContext, ReactNode, useState, useCallback } from 'react';
+import { createContext, useContext, ReactNode, useState, useCallback, useMemo } from 'react';
 import { TradeFilters, TradeSort } from '@/types';
 
 interface AppContextType {
@@ -35,19 +35,19 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const [tradeSort, setTradeSort] = useState<TradeSort>({ field: 'tradeDate', order: 'desc' });
   const [sidebarOpen, setSidebarOpen] = useState(true);
 
+  const contextValue = useMemo(() => ({
+    selectedDate,
+    setSelectedDate,
+    tradeFilters,
+    setTradeFilters,
+    tradeSort,
+    setTradeSort,
+    sidebarOpen,
+    setSidebarOpen,
+  }), [selectedDate, tradeFilters, tradeSort, sidebarOpen]);
+
   return (
-    <AppContext.Provider
-      value={{
-        selectedDate,
-        setSelectedDate,
-        tradeFilters,
-        setTradeFilters,
-        tradeSort,
-        setTradeSort,
-        sidebarOpen,
-        setSidebarOpen,
-      }}
-    >
+    <AppContext.Provider value={contextValue}>
       {children}
     </AppContext.Provider>
   );

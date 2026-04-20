@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect, useCallback, useRef } from 'react';
+import React, { useState, useEffect, useCallback, useRef, memo } from 'react';
 import { useRouter } from '@/lib/router';
 import { cn } from '@/lib/utils';
 import { CurrencyBadge, LoadingSpinner, ErrorState } from '@/components/common/loading';
@@ -241,6 +241,113 @@ function SectionHeader({
     </div>
   );
 }
+
+// ─── Collapsible Section Card (outside component to prevent remount on re-render) ────
+
+const SectionCard = memo(function SectionCard({
+  sectionKey,
+  title,
+  icon: Icon,
+  children,
+  className,
+  defaultOpen,
+  openSections,
+  onToggle,
+}: {
+  sectionKey: string;
+  title: string;
+  icon: React.ElementType;
+  children: React.ReactNode;
+  className?: string;
+  defaultOpen?: boolean;
+  openSections: Record<string, boolean>;
+  onToggle: (key: string) => void;
+}) {
+  const isOpen = openSections[sectionKey] ?? defaultOpen ?? true;
+  return (
+    <div className={cn('bg-[#161618] rounded-xl border border-white/[0.06]', className)}>
+      <button
+        type="button"
+        onClick={() => onToggle(sectionKey)}
+        className="w-full flex items-center justify-between p-5 hover:bg-white/[0.02] transition-colors rounded-t-xl"
+      >
+        <div className="flex items-center gap-2.5">
+          <Icon className="h-4 w-4 text-muted-foreground" />
+          <h3 className="text-sm font-semibold uppercase tracking-wider text-muted-foreground">
+            {title}
+          </h3>
+        </div>
+        {isOpen ? (
+          <ChevronUp className="h-4 w-4 text-muted-foreground" />
+        ) : (
+          <ChevronDown className="h-4 w-4 text-muted-foreground" />
+        )}
+      </button>
+      {isOpen && (
+        <>
+          <Separator className="bg-white/[0.06]" />
+          <div className="p-5 space-y-4">{children}</div>
+        </>
+      )}
+    </div>
+  );
+});
+
+// ─── Rating Slider (outside component to prevent remount on re-render) ────
+
+const RatingSlider = memo(function RatingSlider({
+  value,
+  onChange,
+  label,
+}: {
+  value: number;
+  onChange: (v: number) => void;
+  label: string;
+}) {
+  return (
+    <div className="space-y-2">
+      <div className="flex items-center justify-between">
+        <Label className="text-sm text-muted-foreground">{label}</Label>
+        <span className="text-sm font-medium text-muted-foreground">
+          {value > 0 ? `${value}/5` : '—'}
+        </span>
+      </div>
+      <div className="flex items-center gap-3">
+        <Slider
+          min={0}
+          max={5}
+          step={1}
+          value={[value]}
+          onValueChange={([v]) => onChange(v)}
+          className="flex-1"
+        />
+        <div className="flex gap-0.5">
+          {[1, 2, 3, 4, 5].map((star) => (
+            <button
+              key={star}
+              type="button"
+              onClick={() => onChange(star === value ? 0 : star)}
+              className="w-6 h-6 flex items-center justify-center transition-colors"
+            >
+              <svg
+                className={cn(
+                  'w-4 h-4',
+                  star <= value ? 'text-amber-400 fill-amber-400' : 'text-muted-foreground/30'
+                )}
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+                strokeWidth={2}
+                fill="none"
+              >
+                <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" />
+              </svg>
+            </button>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+});
 
 // ─── Component ──────────────────────────────────────────────────────────────
 
@@ -650,109 +757,6 @@ export default function TradeFormPage({ tradeId }: { tradeId?: string }) {
     }
   }
 
-  // ─── Collapsible Section Card ──────────────────────────────────────────
-
-  function SectionCard({
-    sectionKey,
-    title,
-    icon: Icon,
-    children,
-    className,
-    defaultOpen,
-  }: {
-    sectionKey: string;
-    title: string;
-    icon: React.ElementType;
-    children: React.ReactNode;
-    className?: string;
-    defaultOpen?: boolean;
-  }) {
-    const isOpen = openSections[sectionKey] ?? defaultOpen ?? true;
-    return (
-      <div className={cn('bg-[#161618] rounded-xl border border-white/[0.06]', className)}>
-        <button
-          type="button"
-          onClick={() => toggleSection(sectionKey)}
-          className="w-full flex items-center justify-between p-5 hover:bg-white/[0.02] transition-colors rounded-t-xl"
-        >
-          <div className="flex items-center gap-2.5">
-            <Icon className="h-4 w-4 text-muted-foreground" />
-            <h3 className="text-sm font-semibold uppercase tracking-wider text-muted-foreground">
-              {title}
-            </h3>
-          </div>
-          {isOpen ? (
-            <ChevronUp className="h-4 w-4 text-muted-foreground" />
-          ) : (
-            <ChevronDown className="h-4 w-4 text-muted-foreground" />
-          )}
-        </button>
-        {isOpen && (
-          <>
-            <Separator className="bg-white/[0.06]" />
-            <div className="p-5 space-y-4">{children}</div>
-          </>
-        )}
-      </div>
-    );
-  }
-
-  // ─── Rating Display Helper ─────────────────────────────────────────────
-
-  function RatingSlider({
-    value,
-    onChange,
-    label,
-  }: {
-    value: number;
-    onChange: (v: number) => void;
-    label: string;
-  }) {
-    return (
-      <div className="space-y-2">
-        <div className="flex items-center justify-between">
-          <Label className="text-sm text-muted-foreground">{label}</Label>
-          <span className="text-sm font-medium text-muted-foreground">
-            {value > 0 ? `${value}/5` : '—'}
-          </span>
-        </div>
-        <div className="flex items-center gap-3">
-          <Slider
-            min={0}
-            max={5}
-            step={1}
-            value={[value]}
-            onValueChange={([v]) => onChange(v)}
-            className="flex-1"
-          />
-          <div className="flex gap-0.5">
-            {[1, 2, 3, 4, 5].map((star) => (
-              <button
-                key={star}
-                type="button"
-                onClick={() => onChange(star === value ? 0 : star)}
-                className="w-6 h-6 flex items-center justify-center transition-colors"
-              >
-                <svg
-                  className={cn(
-                    'w-4 h-4',
-                    star <= value ? 'text-amber-400 fill-amber-400' : 'text-muted-foreground/30'
-                  )}
-                  viewBox="0 0 24 24"
-                  stroke="currentColor"
-                  strokeWidth={2}
-                  fill="none"
-                >
-                  <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" />
-                </svg>
-              </button>
-            ))}
-          </div>
-        </div>
-      </div>
-    );
-  }
-
   // ─── Render: Fetching State ────────────────────────────────────────────
 
   if (fetching) {
@@ -892,7 +896,7 @@ export default function TradeFormPage({ tradeId }: { tradeId?: string }) {
 
         <div className="space-y-5">
           {/* Trade Information Section */}
-          <SectionCard sectionKey="basic" title="Trade Information" icon={BarChart3}>
+          <SectionCard sectionKey="basic" title="Trade Information" icon={BarChart3} openSections={openSections} onToggle={toggleSection}>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               {/* Symbol */}
               <div className="space-y-1.5 sm:col-span-2">
@@ -908,7 +912,6 @@ export default function TradeFormPage({ tradeId }: { tradeId?: string }) {
                     'bg-white/[0.03] border-white/[0.08] rounded-lg focus:border-primary',
                     errors.symbol && 'border-red-500'
                   )}
-                  autoFocus
                 />
                 {errors.symbol && (
                   <p className="text-xs text-red-400">{errors.symbol}</p>
@@ -1050,7 +1053,7 @@ export default function TradeFormPage({ tradeId }: { tradeId?: string }) {
           </SectionCard>
 
           {/* Price & Quantity Section */}
-          <SectionCard sectionKey="price" title="Price & Quantity" icon={Calculator}>
+          <SectionCard sectionKey="price" title="Price & Quantity" icon={Calculator} openSections={openSections} onToggle={toggleSection}>
             <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
               {/* Entry Price */}
               <div className="space-y-1.5">
@@ -1213,7 +1216,7 @@ export default function TradeFormPage({ tradeId }: { tradeId?: string }) {
           </SectionCard>
 
           {/* Tags Section */}
-          <SectionCard sectionKey="tags" title="Tags" icon={Tag}>
+          <SectionCard sectionKey="tags" title="Tags" icon={Tag} openSections={openSections} onToggle={toggleSection}>
             <div className="space-y-3">
               {/* Selected Tags */}
               <div className="flex flex-wrap gap-2">
@@ -1294,7 +1297,7 @@ export default function TradeFormPage({ tradeId }: { tradeId?: string }) {
 
         <div className="space-y-5">
           {/* Trade Details Section */}
-          <SectionCard sectionKey="details" title="Trade Details" icon={FileText}>
+          <SectionCard sectionKey="details" title="Trade Details" icon={FileText} openSections={openSections} onToggle={toggleSection}>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               {/* Strategy */}
               <div className="space-y-1.5">
@@ -1380,7 +1383,7 @@ export default function TradeFormPage({ tradeId }: { tradeId?: string }) {
           </SectionCard>
 
           {/* Psychology & Notes Section */}
-          <SectionCard sectionKey="psychology" title="Psychology & Notes" icon={Brain}>
+          <SectionCard sectionKey="psychology" title="Psychology & Notes" icon={Brain} openSections={openSections} onToggle={toggleSection}>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               {/* Emotional State Before */}
               <div className="space-y-1.5">
@@ -1476,7 +1479,7 @@ export default function TradeFormPage({ tradeId }: { tradeId?: string }) {
           </SectionCard>
 
           {/* Screenshots Section */}
-          <SectionCard sectionKey="screenshots" title="Screenshots" icon={ImagePlus}>
+          <SectionCard sectionKey="screenshots" title="Screenshots" icon={ImagePlus} openSections={openSections} onToggle={toggleSection}>
             <div className="space-y-4">
               {/* Drop Zone */}
               <div
