@@ -1,6 +1,7 @@
 'use client';
 
 import React from 'react';
+import Image from 'next/image';
 import { useRouter } from '@/lib/router';
 import { useApp } from '@/lib/app-context';
 import { cn } from '@/lib/utils';
@@ -15,7 +16,6 @@ import {
   Upload,
   ChevronLeft,
   ChevronRight,
-  TrendingUp,
   X,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -78,18 +78,16 @@ export function AppSidebar() {
         )}>
           {sidebarOpen && (
             <div className="flex items-center gap-3 cursor-pointer" onClick={() => navigate('dashboard')}>
-              <div className="w-9 h-9 rounded-xl bg-primary/20 flex items-center justify-center border border-primary/30">
-                <TrendingUp className="w-5 h-5 text-primary" />
-              </div>
+              <Image src="/favicon-32.png" alt="HeyJournal" width={36} height={36} className="rounded-xl" />
               <div className="flex flex-col">
-                <span className="font-bold text-[15px] tracking-tight leading-tight">Trading Journal</span>
-                <span className="text-[10px] text-muted-foreground uppercase tracking-[0.15em] leading-tight">The Disciplined Observer</span>
+                <span className="font-bold text-[15px] tracking-tight leading-tight">HeyJournal</span>
+                <span className="text-[10px] text-muted-foreground uppercase tracking-[0.15em] leading-tight">Your Trading Friend</span>
               </div>
             </div>
           )}
           {!sidebarOpen && (
-            <div className="w-9 h-9 rounded-xl bg-primary/20 flex items-center justify-center border border-primary/30 cursor-pointer" onClick={() => navigate('dashboard')}>
-              <TrendingUp className="w-5 h-5 text-primary" />
+            <div className="w-9 h-9 rounded-xl cursor-pointer" onClick={() => navigate('dashboard')}>
+              <Image src="/favicon-32.png" alt="HeyJournal" width={36} height={36} className="rounded-xl" />
             </div>
           )}
           <Button

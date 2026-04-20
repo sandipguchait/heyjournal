@@ -19,7 +19,12 @@ export const metadata: Metadata = {
   keywords: ["HeyJournal", "Trading Journal", "Indian Stock Market", "NSE", "BSE", "Trading", "Stock Market", "Performance Analytics"],
   authors: [{ name: "Sandip Guchait" }],
   icons: {
-    icon: "/favicon.ico",
+    icon: [
+      { url: "/favicon-16.png", sizes: "16x16", type: "image/png" },
+      { url: "/favicon-32.png", sizes: "32x32", type: "image/png" },
+      { url: "/favicon.ico", sizes: "48x48" },
+    ],
+    apple: "/apple-touch-icon.png",
   },
   openGraph: {
     title: "HeyJournal - Your Trading Friend",
